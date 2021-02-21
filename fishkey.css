@@ -1,1 +1,135 @@
-.draw-svg{animation:draw 1s linear forwards}@keyframes draw{to{stroke-dashoffset:0}}.bg-noise{pointer-events:none;width:100vw!important;height:100vh!important;position:fixed;top:0!important;left:0!important}.it-links:hover{font-style:italic}.burgerWrapper{position:fixed;overflow:hidden;top:0;right:0}.burgerBlock,.burgerToggler{position:fixed;width:100vw;top:0;left:0}.burgerToggler{z-index:99999!important}.burgerBlock{height:100vh}.burgerBlock>div>div{height:100vh}.burgerButton{cursor:pointer}.burgerHidden{opacity:0;z-index:0!important;pointer-events:none}.burgerShown{opacity:1;z-index:9999!important;pointer-events:auto}#nav-icon{width:50px;height:36px;position:relative;transition:.5s ease-in-out;cursor:pointer}#nav-icon span{position:absolute;height:4px;width:100%;background:#bdbdbd;border-radius:1em;opacity:1;transform:rotate(0);transition:.25s ease-in-out;transform-origin:center center}#nav-icon span:nth-child(1){top:0;transform:translate(0,100%)}#nav-icon span:nth-child(2){top:50%}#nav-icon span:nth-child(3){top:100%;transform:translate(0,-100%)}#nav-icon.open{display:grid;place-items:center}#nav-icon.open span{top:50%}#nav-icon.open span:nth-child(1){transform:rotate(45deg)}#nav-icon.open span:nth-child(2){transform:scale(0)}#nav-icon.open span:nth-child(3){transform:rotate(-45deg)}.cursor-changed{position:fixed;top:0;left:-100px;overflow:visible;z-index:10000000000;pointer-events:none}.cursor-active,.cursor-disactive{position:absolute;top:0;left:0;transform:translate(-50%,-50%);transition:opacity .3s ease}.curtainPage{width:100vw;overflow:hidden;position:fixed}
+/* вырисовка вектора */
+/* вырисовка надписи вектором */
+.draw-svg {
+    animation: draw 1s linear forwards;
+}
+@keyframes draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* шум на фоне */
+.bg-noise {
+    pointer-events: none;
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+/* ссылки италиком */
+.it-links:hover {
+    font-style: italic;
+}
+
+/* универсальный бургер */
+.burgerWrapper {
+    position: fixed;
+    overflow: hidden;
+    top: 0;
+    right: 0;
+}
+.burgerToggler,
+.burgerBlock {
+    position: fixed;
+    width: 100vw;
+    top: 0;
+    left: 0;
+}
+.burgerToggler {
+    z-index: 99999 !important;
+}
+.burgerBlock {
+    height: 100vh;
+}
+.burgerBlock > div > div{
+    height: 100vh;
+}
+.burgerButton {
+    cursor: pointer;
+}
+.burgerHidden {
+    opacity: 0;
+    z-index: 0 !important;
+    pointer-events: none;
+}
+.burgerShown {
+    opacity: 1;
+    z-index: 9999 !important;
+    pointer-events: auto;
+}
+
+/* кнопка для бургера */
+#nav-icon {
+    width: 50px;
+    height: 36px;
+    position: relative;
+    transition: .5s ease-in-out;
+    cursor: pointer;
+}
+#nav-icon span {
+    position: absolute;
+    height: 4px;
+    width: 100%;
+    background: #BDBDBD;
+    border-radius: 1em;
+    opacity: 1;
+    transform: rotate(0deg);
+    transition: .25s ease-in-out;
+    transform-origin: center center;
+}
+#nav-icon span:nth-child(1) {
+    top: 0%;
+    transform: translate(0, 100%);
+}
+#nav-icon span:nth-child(2) {
+    top: 50%;
+}
+#nav-icon span:nth-child(3) {
+    top: 100%;
+    transform: translate(0, -100%);
+}
+#nav-icon.open {
+    display: grid;
+    place-items: center;
+}
+#nav-icon.open span {
+    top: 50%;
+}
+#nav-icon.open span:nth-child(1) {
+    transform: rotate(45deg);
+}
+#nav-icon.open span:nth-child(2) {
+    transform: scale(0);
+}
+#nav-icon.open span:nth-child(3) {
+    transform: rotate(-45deg);
+}
+
+/* замена курсора */
+.cursor-changed {
+    position: fixed;
+    top: 0;
+    left: -100px;
+    overflow: visible;
+    z-index: 10000000000;
+    pointer-events: none;
+}
+.cursor-active,
+.cursor-disactive {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+}
+
+/* смена экранов шторкой */
+.curtainPage {
+    width: 100vw;
+    overflow: hidden;
+    position: fixed;
+}
+
