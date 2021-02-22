@@ -1,5 +1,5 @@
 /* горизонтальный скролл всей страницы */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function fullPageHorScroll(parameters) {
     const horScrollBlocks = document.querySelectorAll(parameters.blocks),
         horScrollMenu = parameters.menu ? document.querySelector(parameters.menu) : null,

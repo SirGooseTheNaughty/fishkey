@@ -1,5 +1,5 @@
 /* вырисовка вектора */
-import getElemDim from "./utils/getElemDim"
+import getElemDim from "./utils/getElemDim.js"
 export default function vectorDraw(params) {
     let { selectors, svgs, trigger, hoverTriggers, offsets } = params;
     const animFunction = params.animFunction || 'ease';

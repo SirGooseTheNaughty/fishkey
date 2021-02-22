@@ -1,5 +1,5 @@
 /* горизонтальный скролл элементов одного блока */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function horScrollBlock(parameters) {
     const horScrollBlock = document.querySelector(parameters.block),
         header = parameters.header ? document.querySelector(parameters.header) : null,

@@ -1,5 +1,5 @@
 /* прилипание картинок */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function parallax(params) {
     const parallaxTargets = document.querySelectorAll(params.selectors),
         minWidth = params.minWidth || 1200;

@@ -1,5 +1,5 @@
 /* горизонтальный скролл нескольких блоков */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function horScroll(params) {
     const horScrollBlocks = document.querySelectorAll(params.blocks),
         horScrollMinWidth = params.minWidth || 1200,

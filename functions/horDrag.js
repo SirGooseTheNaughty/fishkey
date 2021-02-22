@@ -1,5 +1,5 @@
 /* перетаскивалка */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function horDrag(params) {
     const horDragGallery = document.querySelector(params.block),
         horDragObj = horDragGallery.querySelector('div').firstElementChild;

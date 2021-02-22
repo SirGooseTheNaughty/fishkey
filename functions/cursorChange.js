@@ -1,5 +1,5 @@
 /* замена курсора */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function cursorChange(params) {
     const triggers = params.triggers || null,
         hasNewNormalStyle = params.hasNewNormalStyle || false,

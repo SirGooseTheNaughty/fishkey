@@ -1,5 +1,5 @@
 /* фото за элементами */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function bgPhotos(params) {
     const elemSelectors = params.elements,
         photoSelectors = params.photos,

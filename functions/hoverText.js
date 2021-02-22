@@ -1,5 +1,5 @@
 /* текст над элементами */
-import initCoordTracking from "./utils/initCoordTracking"
+import initCoordTracking from "./utils/initCoordTracking.js"
 export default function hoverText(params) {
     const hoverTextObjects = document.querySelectorAll(params.selectors),
         hoverTextCursor = document.querySelector(params.cursor),

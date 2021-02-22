@@ -1,5 +1,5 @@
 /* универсальный бургер */
-import setBurgerTrigger from "./utils/setBurgerTrigger"
+import setBurgerTrigger from "./utils/setBurgerTrigger.js"
 export default function uniBurger(params) {
     const burgerBlock = document.querySelector(params.burgerBlock),
         triggerBlock = document.querySelector(params.triggerBlock),

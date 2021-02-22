@@ -1,5 +1,5 @@
 /* вырисовка надписи вектором */
-import getElemDim from "./utils/getElemDim"
+import getElemDim from "./utils/getElemDim.js"
 
 export default function vectorWrite(params) {
     let { selector, svg } = params;
