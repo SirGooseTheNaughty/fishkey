@@ -1,5 +1,5 @@
 /* утилита для настройки иконки бургера */
-import getElemDim from "./getElemDim"
+import getElemDim from "./getElemDim.js"
 export default function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFunction) {
     $(triggerBlock).css({
         position: 'fixed',
