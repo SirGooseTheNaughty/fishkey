@@ -192,6 +192,7 @@ function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFun
 /* вырисовка вектора */
 function vectorDraw_init(params) {
     let { selectors, svgs, trigger, hoverTriggers, offsets } = params;
+    const strokeWidth = params.strokeWidth || 0.5;
     const animFunction = params.animFunction || 'ease';
     const animTime = params.animTime || 0.5;
     const minWidth = params.minWidth || 0;
@@ -216,8 +217,12 @@ function vectorDraw_init(params) {
                 'stroke-dasharray': logoLengths[i],
                 'stroke-dashoffset': logoLengths[i],
                 'animation-duration': animTime + 's',
-                'animation-timing-function': animFunction
+                'animation-timing-function': animFunction,
+                fill: 'none !important',
+                stroke: logoPaths[i].getAttribute("fill"),
+                'stroke-width': strokeWidth + 'px'
             });
+            logoPaths[i].removeAttribute("fill");
             const desiredWidth = getElemDim(space, "width");
             const coeff = desiredWidth/(+space.querySelector('svg').getAttribute('width'));
             space.querySelector('svg').style.transform = `scale(${coeff})`;
@@ -253,20 +258,18 @@ function vectorDraw_init(params) {
     }
 }
 
-
 /* вырисовка надписи вектором */
 function vectorWrite_init(params) {
     let { selector, svg } = params;
     let logoPaths = [];
     let desiredWidth = 0;
     let coeff = 0;
-    let strokeWidth = params.strokeWidth || 0.5;
+    const strokeWidth = params.strokeWidth || 0.5;
     const offset = params.offset ? params.offset*$(window).height()/100 : 0;
     let animTime = params.animTime || 0.5;
     const minWidth = params.minWidth || 0;
 
     if ($(window).width() > minWidth) {
-        strokeWidth = strokeWidth ? strokeWidth + 'px' : '1px';
         const vd_forSVG = document.querySelector(selector);
         $(vd_forSVG).html(svg);
 
@@ -275,7 +278,7 @@ function vectorWrite_init(params) {
 
         $(logoPaths).css({
             'animation-timing-function': 'linear',
-            'stroke-width': strokeWidth,
+            'stroke-width': strokeWidth + "px",
             'fill-opacity': '0',
         });
         logoPaths.forEach((path, i) => {
@@ -315,7 +318,6 @@ function vectorWrite_init(params) {
         })
     }
 }
-
 
 /* кнопка вжух в кружок */
 function buttonToCircle_init(params) {
