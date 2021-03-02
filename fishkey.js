@@ -745,38 +745,12 @@ function textApp_init(parameters) {
     const animSpeed = parameters.animSpeed || 400;
     const wordSpeed = parameters.wordSpeed || 50;
     const offsets = parameters.offsets || null;
+    const isHiddenByDefault = parameters.isHiddenByDefault || false;
+    const triggerBlocks = parameters.triggerBlocks ? document.querySelectorAll(parameters.triggerBlocks) : null;
     const txtAppWordConts = [];
 
-    function txtAppear(contNum) {
-        let i = 0;
-        const txtApp_interval = setInterval(() => {
-            if (!txtAppWordConts[contNum][i]) {
-                clearInterval(txtApp_interval);
-            }
-            else {
-                txtAppWordConts[contNum][i].style.transition = `${animSpeed/1000}s ease`;
-                txtAppWordConts[contNum][i].style.top = '0';
-            }
-            i++;
-        }, wordSpeed);
-    }
-
-    function txtReappear(contNum) {
-        txtAppWordConts[contNum].forEach(word => {
-            word.style.transition = `none`;
-            word.style.top = '2em';
-        });
-        txtAppear(contNum);
-    }
-    
-    function scrollTrigger() {
-        const appeared = txtAppWordConts.map((vector, i) => $(vector).offset().top < $(window).scrollTop() + $(window).height() - offsets[i]);
-        appeared.forEach((isVisible, i) => {
-            if (isVisible) {
-                txtAppear(i);
-            }
-        })
-    }
+    const timeCache = new Date().getTime();
+    let txtApp_intervals = [];
 
     if ($(window).width() > minWidth) {
         txtAppConts.forEach((txtAppCont, contNum) => {
@@ -794,7 +768,7 @@ function textApp_init(parameters) {
                 txtAppCont.innerHTML = '';
                 txtAppWords.forEach((word, i) => {
                     txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block; padding: 0 ${spacing} 1rem 0; margin-bottom: -1rem'>
-                                                <span class='txtAppWordCont${contNum}'>${word} </span>
+                                                <span class='txtAppWordCont${contNum}-${timeCache}'>${word} </span>
                                             </p>`;
                 });
             } else if (divider == 'p') {
@@ -803,11 +777,11 @@ function textApp_init(parameters) {
                 txtAppWords.forEach((word, i) => {
                     if (i == txtAppWords.length - 1) {
                         txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block; padding-right: ${spacing}'>
-                                                    <span class='txtAppWordCont${contNum}'>${word} </span>
+                                                    <span class='txtAppWordCont${contNum}-${timeCache}'>${word} </span>
                                                 </p>`;
                     } else {
                         txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block; padding: 0 ${spacing} 1rem 0; margin-bottom: -1rem'>
-                                                    <span class='txtAppWordCont${contNum}'>${word}.</span>
+                                                    <span class='txtAppWordCont${contNum}-${timeCache}'>${word}.</span>
                                                 </p>`;
                     }
                 });
@@ -816,7 +790,7 @@ function textApp_init(parameters) {
                 txtAppCont.innerHTML = '';
                 txtAppWords.forEach((word, i) => {
                     txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block; padding: 0 ${spacing} 1rem 0; margin-bottom: -1rem'>
-                                                <span class='txtAppWordCont${contNum}'>${word} </span>
+                                                <span class='txtAppWordCont${contNum}-${timeCache}'>${word} </span>
                                             </p>`;
                 });
             } else {
@@ -824,14 +798,14 @@ function textApp_init(parameters) {
                 txtAppCont.innerHTML = '';
                 txtAppWords.forEach((word, i) => {
                     if (word == ' ') {
-                        txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block; padding-right: ${spacing}'><span class='txtAppWordCont${contNum}'>${word} </span></p>`;
+                        txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block; padding-right: ${spacing}'><span class='txtAppWordCont${contNum}-${timeCache}'>${word} </span></p>`;
                     } else {
-                        txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block;'><span class='txtAppWordCont${contNum}'>${word} </span></p>`;
+                        txtAppCont.innerHTML += `<p style='overflow: hidden; display: inline-block;'><span class='txtAppWordCont${contNum}-${timeCache}'>${word} </span></p>`;
                     }
                 });
             }
 
-            txtAppWordConts[contNum] = document.querySelectorAll(`.txtAppWordCont${contNum}`);
+            txtAppWordConts[contNum] = document.querySelectorAll(`.txtAppWordCont${contNum}-${timeCache}`);
 
             txtAppCont.style.paddingBottom = '0.15em';
             txtAppCont.style.overflow = 'hidden';
@@ -852,14 +826,74 @@ function textApp_init(parameters) {
                 document.addEventListener('scroll', scrollTrigger);
             })
         } else {
-            txtAppConts.forEach((cont, i) => {
-                const contNum = i;
-                function reapp() {
-                    txtReappear(contNum);
+            if (triggerBlocks) {
+                if (isHiddenByDefault) {
+                    triggerBlocks.forEach((trigger, i) => {
+                        txtDisappear(i);
+                        function app() {
+                            txtAppear(i);
+                        }
+                        function disapp() {
+                            txtDisappear(i);
+                        }
+                        trigger.addEventListener('mouseenter', app);
+                        trigger.addEventListener('mouseleave', disapp);
+                    })
+                } else {
+                    triggerBlocks.forEach((trigger, i) => {
+                        function reapp() {
+                            txtReappear(i);
+                        }
+                        trigger.addEventListener('mouseenter', reapp);
+                    })
                 }
-                cont.addEventListener('mouseenter', reapp);
-            })
+            } else {
+                txtAppConts.forEach((cont, i) => {
+                    function reapp() {
+                        txtReappear(i);
+                    }
+                    cont.addEventListener('mouseenter', reapp);
+                })
+            }
         }
+    }
+
+    function txtAppear(contNum) {
+        let i = 0;
+        txtApp_intervals[contNum] = setInterval(() => {
+            if (!txtAppWordConts[contNum][i]) {
+                clearInterval(txtApp_intervals[contNum]);
+            }
+            else {
+                txtAppWordConts[contNum][i].style.transition = `${animSpeed/1000}s ease`;
+                txtAppWordConts[contNum][i].style.top = '0';
+            }
+            i++;
+        }, wordSpeed);
+    }
+
+    function txtDisappear(contNum) {
+        if (txtApp_intervals[contNum]) {
+            clearInterval(txtApp_intervals[contNum]);
+        }
+        txtAppWordConts[contNum].forEach(word => {
+            word.style.transition = `none`;
+            word.style.top = '2em';
+        });
+    }
+
+    function txtReappear(contNum) {
+        txtDisappear(contNum);
+        txtAppear(contNum);
+    }
+    
+    function scrollTrigger() {
+        const appeared = txtAppWordConts.map((vector, i) => $(vector).offset().top < $(window).scrollTop() + $(window).height() - offsets[i]);
+        appeared.forEach((isVisible, i) => {
+            if (isVisible) {
+                txtAppear(i);
+            }
+        })
     }
 }
 
