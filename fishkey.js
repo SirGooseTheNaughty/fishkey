@@ -2212,13 +2212,20 @@ function curtainChange_init(params) {
 
 /* Зум фото */
 function photoZoom_init(params) {
-    const photos = document.querySelectorAll(params.photos),
+    const selectors = params.photos,
         easeTime = params.easeTime || 0.4,
         scale = params.scale || 1.2,
         minWidth = params.minWidth || 1200,
         easeFunction = params.easeFunction || 'ease-in-out';
 
     if ($(window).width() > minWidth) {
+        const selectorsArray = selectors.split(",");
+        const photos = [];
+        selectorsArray.forEach((sel, i) => {
+            const currSel = sel.indexOf("img") != -1 ? sel : sel + " img";
+            photos.push(...document.querySelectorAll(currSel));
+        });
+
         photos.forEach(photo => {
             photo.parentElement.style.overflow = 'hidden';
             photo.style.transition = `transform ${easeTime}s ${easeFunction}`;
