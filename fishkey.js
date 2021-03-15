@@ -2138,7 +2138,7 @@ function curtainChange_init(params) {
             page.style.zIndex = numPages - i;
             page.style.transition = `height ${easeTime}s ${easeFunction}`;
             page.style.height = '100vh';
-            page.querySelector('.t396__artboard').style.height = '100vh';
+            page.querySelector('.t396__artboard') ? page.querySelector('.t396__artboard').style.height = '100vh' : false;
             page.querySelector('.t-bgimg') ? curtainBGs.push(page.querySelector('.t-bgimg')) : curtainBGs.push(null);
         });
         document.addEventListener('wheel', desctopScroller);
