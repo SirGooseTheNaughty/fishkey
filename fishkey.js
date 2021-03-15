@@ -2144,7 +2144,7 @@ function curtainChange_init(params) {
         document.addEventListener('wheel', desctopScroller);
         document.addEventListener('touchend', mobileScroller);
         scaleBGs(0);
-        curtainBGs.forEach(bg => bg.style.transition = `transform ${easeTime}s`);
+        curtainBGs.forEach(bg => bg ? bg.style.transition = `transform ${easeTime}s` : false);
     }
 
     function scaleBGs(ind) {
