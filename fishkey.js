@@ -601,12 +601,13 @@ function horScroll_init(params) {
         horScrollww = $(window).width(),
         horScrollBlocksNum = $(horScrollBlocks).length,
         horScrollTotalHeight = (horScrollBlocksNum-1)*horScrollww/speedCoeff + horScrollwh,
-        horScrollBlockTop = $(horScrollBlocks[0]).offset().top,
+        // horScrollBlockTop = $(horScrollBlocks[0]).offset().top,
         horScrollStop = (horScrollBlocksNum-1)*horScrollww/speedCoeff;
     let horScrollContainer = '';
+    let horScrollBlockTop;
 
     if ($(window).width() > horScrollMinWidth) {
-        console.log(horScrollBlockTop);
+        // console.log(horScrollBlockTop);
         $(horScrollBlocks).wrapAll('<div class="horScrollContainer"></div>');
         horScrollContainer = document.querySelector('.horScrollContainer');
         if (hasDelay) {
@@ -629,6 +630,8 @@ function horScroll_init(params) {
         horScrollBlocks.forEach((block, i) => {
             block.style.left = i*horScrollww+'px';
         });
+        horScrollBlockTop = $('.horScrollStaticContainer').offset().top;
+        console.log(horScrollBlockTop);
     
         if (hasDelay) {
             document.addEventListener('scroll', horizontalScrollDelay);
