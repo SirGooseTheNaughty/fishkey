@@ -603,7 +603,8 @@ function horScroll_init(params) {
         horScrollTotalHeight = (horScrollBlocksNum-1)*horScrollww/speedCoeff + horScrollwh,
         // horScrollBlockTop = $(horScrollBlocks[0]).offset().top,
         horScrollStop = (horScrollBlocksNum-1)*horScrollww/speedCoeff;
-    let horScrollContainer = '';
+    let horScrollContainer;
+    let horScrollStaticContainer;
     let horScrollBlockTop;
 
     if ($(window).width() > horScrollMinWidth) {
@@ -614,7 +615,8 @@ function horScroll_init(params) {
             initCoordTracking(horScrollContainer, 'scroll', 'rel', true, true, {framerate: 15, delaySpeed});
         }
         $(horScrollContainer).wrap('<div class="horScrollStaticContainer"></div>');
-        $('.horScrollStaticContainer').css({
+        horScrollStaticContainer = document.querySelector('.horScrollStaticContainer');
+        $(horScrollStaticContainer).css({
             'background-color': horScrollBlocks[0].querySelector('.t396__artboard').style.backgroundColor, 
             'position': 'relative', 
             'overflow': 'hidden', 
@@ -630,8 +632,6 @@ function horScroll_init(params) {
         horScrollBlocks.forEach((block, i) => {
             block.style.left = i*horScrollww+'px';
         });
-        horScrollBlockTop = $('.horScrollStaticContainer').offset().top;
-        console.log(horScrollBlockTop);
     
         if (hasDelay) {
             document.addEventListener('scroll', horizontalScrollDelay);
@@ -642,7 +642,7 @@ function horScroll_init(params) {
 
     function horizontalScroll() {
         const wt = $(window).scrollTop();
-        let horScrollShift = +wt - horScrollBlockTop;
+        let horScrollShift = +wt - $(horScrollStaticContainer).offset().top;
         if (horScrollShift < 0) {
             $(horScrollContainer).css({
                 position: 'relative',
