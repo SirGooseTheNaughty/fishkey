@@ -606,6 +606,7 @@ function horScroll_init(params) {
     let horScrollContainer = '';
 
     if ($(window).width() > horScrollMinWidth) {
+        console.log(horScrollBlockTop);
         $(horScrollBlocks).wrapAll('<div class="horScrollContainer"></div>');
         horScrollContainer = document.querySelector('.horScrollContainer');
         if (hasDelay) {
