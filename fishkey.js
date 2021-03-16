@@ -642,7 +642,8 @@ function horScroll_init(params) {
 
     function horizontalScroll() {
         const wt = $(window).scrollTop();
-        let horScrollShift = +wt - $(horScrollStaticContainer).offset().top;
+        const horScrollShift = +wt - $(horScrollStaticContainer).offset().top;
+        console.log(horScrollShift);
         if (horScrollShift < 0) {
             $(horScrollContainer).css({
                 position: 'relative',
@@ -663,7 +664,7 @@ function horScroll_init(params) {
 
     function horizontalScrollDelay() {
         const wt = $(window).scrollTop();
-        let horScrollShift = +wt - horScrollBlockTop;
+        const horScrollShift = +wt - horScrollBlockTop;
         if (horScrollShift < 0) {
             $(horScrollContainer).css({
                 position: 'relative'
