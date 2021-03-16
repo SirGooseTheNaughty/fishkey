@@ -601,14 +601,11 @@ function horScroll_init(params) {
         horScrollww = $(window).width(),
         horScrollBlocksNum = $(horScrollBlocks).length,
         horScrollTotalHeight = (horScrollBlocksNum-1)*horScrollww/speedCoeff + horScrollwh,
-        // horScrollBlockTop = $(horScrollBlocks[0]).offset().top,
         horScrollStop = (horScrollBlocksNum-1)*horScrollww/speedCoeff;
     let horScrollContainer;
     let horScrollStaticContainer;
-    let horScrollBlockTop;
 
     if ($(window).width() > horScrollMinWidth) {
-        // console.log(horScrollBlockTop);
         $(horScrollBlocks).wrapAll('<div class="horScrollContainer"></div>');
         horScrollContainer = document.querySelector('.horScrollContainer');
         if (hasDelay) {
@@ -641,9 +638,7 @@ function horScroll_init(params) {
     }
 
     function horizontalScroll() {
-        const wt = $(window).scrollTop();
-        const horScrollShift = +wt - $(horScrollStaticContainer).offset().top;
-        console.log(horScrollShift);
+        const horScrollShift = $(window).scrollTop() - $(horScrollStaticContainer).offset().top;
         if (horScrollShift < 0) {
             $(horScrollContainer).css({
                 position: 'relative',
@@ -663,9 +658,7 @@ function horScroll_init(params) {
     }
 
     function horizontalScrollDelay() {
-        const wt = $(window).scrollTop();
-        const horScrollShift = +wt - $(horScrollStaticContainer).offset().top;
-        console.log(horScrollShift);
+        const horScrollShift = $(window).scrollTop() - $(horScrollStaticContainer).offset().top;
         if (horScrollShift < 0) {
             $(horScrollContainer).css({
                 position: 'relative'
