@@ -2320,3 +2320,91 @@ function bgChange_init(params) {
         body.style.backgroundColor = colors[currentColor];
     }
 }
+
+
+// круглый фон для кнопки
+function circleBg_init(params) {
+    if (!document.querySelector(params.button)) return console.error('Неправильно задан селектор кнопки');
+    const btn = document.querySelector(params.button);
+    const circleColor = params.color || "white";
+    const textColor = params.textColor || "black";
+    const easeTime = params.easeTime || 0.4;
+    const easeFunction = params.easeFunction || "ease-out";
+    const minWidth = params.minWidth || 1200;
+    
+    const content = btn.firstElementChild;
+    const entryPoint = {
+        x: 0,
+        y: 0,
+        px: 0,
+        py: 0
+    };
+
+    const btnDims = {
+        width: parseInt(window.getComputedStyle(btn).width),
+        height: parseInt(window.getComputedStyle(btn).height)
+    };
+    const corners = [
+        {x: 0, y: 0},
+        {x: btnDims.width, y: 0},
+        {x: btnDims.width, y: btnDims.height},
+        {x: 0, y: btnDims.height}
+    ];
+    let animContent;
+
+    if ($(window).width() > minWidth) {
+        $(content).css({
+            position: 'absolute',
+            height: '100%',
+            display: 'grid',
+            'place-items': 'center'
+        });
+        $(content).clone().appendTo(btn);
+        animContent = btn.lastElementChild;
+        $(animContent).css({
+            'background-color': circleColor,
+            color: textColor,
+            'clip-path': 'circle(0 at left top)'
+        });
+    
+        btn.addEventListener('mouseenter', popCircle);
+        btn.addEventListener('mouseleave', shrinkCircle);
+    }
+
+    function getRadius(coords) {
+        const distToCorners = corners.map(corner => 1.05*Math.sqrt((corner.x - coords.x)*(corner.x - coords.x) + (corner.y - coords.y)*(corner.y - coords.y)));
+        return Math.max(...distToCorners);
+    }
+
+    function popCircle(e) {
+        const coords = {
+            x: e.layerX,
+            y: e.layerY
+        };
+        entryPoint.x = e.layerX;
+        entryPoint.y = e.layerY;
+        entryPoint.px = e.pageX;
+        entryPoint.py = e.pageY;
+        animContent.style.transition = 'none';
+        animContent.style.clipPath = `circle(0 at ${coords.x}px ${coords.y}px)`;
+        setTimeout(() => {
+            animContent.style.transition = `clip-path ${easeTime}s ${easeFunction}`;
+            animContent.style.clipPath = `circle(${getRadius(coords)}px at ${coords.x}px ${coords.y}px)`;
+        }, 5)
+    }
+
+    function shrinkCircle(e) {
+        const diff = {
+            x: e.pageX - entryPoint.px,
+            y: e.pageY - entryPoint.py
+        };
+        const coords = {
+            x: entryPoint.x + diff.x,
+            y: entryPoint.y + diff.y
+        };
+        animContent.style.transition = 'none';
+        animContent.style.clipPath = `circle(${getRadius(coords)}px at ${coords.x}px ${coords.y}px)`;
+        animContent.style.transition = `clip-path ${easeTime}s ${easeFunction}`;
+        animContent.style.clipPath = `circle(0 at ${coords.x}px ${coords.y}px)`;
+    }
+}
