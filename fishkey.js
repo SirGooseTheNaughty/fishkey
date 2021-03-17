@@ -2326,7 +2326,7 @@ function bgChange_init(params) {
 function circleBg_init(params) {
     if (!document.querySelector(params.button)) return console.error('Неправильно задан селектор кнопки');
     const btn = document.querySelector(params.button);
-    const circleColor = params.color || "white";
+    const circleColor = params.circleColor || "white";
     const textColor = params.textColor || "black";
     const easeTime = params.easeTime || 0.4;
     const easeFunction = params.easeFunction || "ease-out";
