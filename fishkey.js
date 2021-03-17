@@ -380,18 +380,40 @@ function buttonToCircle_init(params) {
 
 /* шум на фоне */
 function bgNoise_init(parameters) {
-    const bgNoiseBlock = document.querySelector(parameters.selector),
-        bgNoiser = bgNoiseBlock.querySelector('[data-elem-type="shape"]'),
-        bgGrainer = bgNoiser.querySelector('.tn-atom'),
+    const isNoiseDefault = parameters.isNoiseDefault || false,
         grain = parameters.grain ? parameters.grain + 'px' : 'auto',
-        zIndex = parameters.isCovering ? 999999999 : 0;
-    bgNoiser.classList.add('bg-noise');
-    bgNoiser.style.opacity = parameters.opacity/100 || 0.05;
-    bgNoiser.style.zIndex = zIndex;
-    bgNoiseBlock.style.height = '0';
-    bgNoiseBlock.style.overflow = 'hidden';
-    bgGrainer.style.backgroundRepeat = 'repeat';
-    bgGrainer.style.backgroundSize = `${grain}`;
+        zIndex = parameters.isCovering ? 999999999 : 0,
+        opacity = parameters.opacity/100 || 0.05;
+
+    if (isNoiseDefault) {
+        setDefaultNoise();
+    } else {
+        setCustomNoise();
+    }
+
+    function setCustomNoise() {
+        const bgNoiseBlock = document.querySelector(parameters.selector),
+            bgNoiser = bgNoiseBlock.querySelector('[data-elem-type="shape"]'),
+            bgGrainer = bgNoiser.querySelector('.tn-atom');
+        bgNoiser.classList.add('bg-noise');
+        bgNoiser.style.opacity = opacity;
+        bgNoiser.style.zIndex = zIndex;
+        bgNoiseBlock.style.height = '0';
+        bgNoiseBlock.style.overflow = 'hidden';
+        bgGrainer.style.backgroundRepeat = 'repeat';
+        bgGrainer.style.backgroundSize = `${grain}`;
+    }
+
+    function setDefaultNoise() {
+        $("body").append('<div class="bg-noise"></div>');
+        $('.bg-noise').css({
+            "background-image": 'url("https://sirgoosethenaughty.github.io/fishkey_dev/assets/noise.gif")',
+            opacity,
+            zIndex,
+            "background-repeat": 'repeat',
+            "background-size": grain
+        });
+    }
 }
 
 /* горизонтальный скролл всей страницы */
