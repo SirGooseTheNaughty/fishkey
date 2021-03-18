@@ -2364,6 +2364,7 @@ function circleBg_init(params) {
         $(animContent).css({
             'background-color': circleColor,
             color: textColor,
+            '-webkit-clip-path': 'circle(0 at left top)',
             'clip-path': 'circle(0 at left top)'
         });
     
@@ -2386,10 +2387,17 @@ function circleBg_init(params) {
         entryPoint.px = e.pageX;
         entryPoint.py = e.pageY;
         animContent.style.transition = 'none';
-        animContent.style.clipPath = `circle(0 at ${coords.x}px ${coords.y}px)`;
+        $(animContent).css({
+            '-webkit-clip-path': `circle(0 at ${coords.x}px ${coords.y}px)`,
+            'clip-path': `circle(0 at ${coords.x}px ${coords.y}px)`
+        });
         setTimeout(() => {
-            animContent.style.transition = `clip-path ${easeTime}s ${easeFunction}`;
-            animContent.style.clipPath = `circle(${getRadius(coords)}px at ${coords.x}px ${coords.y}px)`;
+            const radius = getRadius(coords);
+            $(animContent).css({
+                transition: `clip-path ${easeTime}s ${easeFunction}, -webkit-clip-path ${easeTime}s ${easeFunction}`,
+                '-webkit-clip-path': `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
+                'clip-path': `circle(${radius}px at ${coords.x}px ${coords.y}px)`
+            });
         }, 5)
     }
 
@@ -2402,9 +2410,17 @@ function circleBg_init(params) {
             x: entryPoint.x + diff.x,
             y: entryPoint.y + diff.y
         };
+        const radius = getRadius(coords);
+
         animContent.style.transition = 'none';
-        animContent.style.clipPath = `circle(${getRadius(coords)}px at ${coords.x}px ${coords.y}px)`;
-        animContent.style.transition = `clip-path ${easeTime}s ${easeFunction}`;
-        animContent.style.clipPath = `circle(0 at ${coords.x}px ${coords.y}px)`;
+        $(animContent).css({
+            '-webkit-clip-path': `circle(${radius}px at ${coords.x}px ${coords.y}px)`,
+            'clip-path': `circle(${radius}px at ${coords.x}px ${coords.y}px)`
+        });
+        animContent.style.transition = `clip-path ${easeTime}s ${easeFunction}, -webkit-clip-path ${easeTime}s ${easeFunction}`;
+        $(animContent).css({
+            '-webkit-clip-path': `circle(0 at ${coords.x}px ${coords.y}px)`,
+            'clip-path': `circle(0 at ${coords.x}px ${coords.y}px)`
+        });
     }
 }
