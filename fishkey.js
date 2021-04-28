@@ -1,8 +1,39 @@
-/* утилита для получения значений размеров на разной ширине экрана */
-function getElemDim (elem, dim) {
+/* утилита для определения браузера */
+/* Названия браузеров: chrome, firefox, safari, explorer, edge, opera, samsung */
+function getBrowserName() {
+    const agent = window.navigator.userAgent;
+    if (agent.indexOf("Firefox") > -1) {
+        return "firefox";
+      } else if (agent.indexOf("SamsungBrowser") > -1) {
+        return "samsung";
+      } else if (agent.indexOf("Opera") > -1 || agent.indexOf("OPR") > -1) {
+        return "opera";
+      } else if (agent.indexOf("Trident") > -1) {
+        return "explorer";
+      } else if (agent.indexOf("Edge") > -1) {
+        return "edge";
+      } else if (agent.indexOf("Chrome") > -1) {
+        return "chrome";
+      } else if (agent.indexOf("Safari") > -1) {
+        return "safari";
+      }
+      return "unknown";
+}
+
+/* утилита для получения текущего брейкпоинта */
+function getCurrentBreakpoint () {
     const tildaBreakpoints = [1200, 980, 640, 480, 320];
     const ww = $(window).width();
-    let currentBreakpoint;
+    for(let i = 0; i < tildaBreakpoints.length; i++) {
+        if (ww >= tildaBreakpoints[i]) {
+            return i;
+        }
+    }
+    return tildaBreakpoints.length - 1;
+}
+
+/* утилита для получения значений размеров на разной ширине экрана */
+function getElemDim (elem, dim) {
     let result = null;
     const queries = [
         `data-field-${dim}-value`,
@@ -11,12 +42,7 @@ function getElemDim (elem, dim) {
         `data-field-${dim}-res-480-value`,
         `data-field-${dim}-res-320-value`
     ];
-    for(let i = 0; i < tildaBreakpoints.length; i++) {
-        if (ww > tildaBreakpoints[i]) {
-            currentBreakpoint = i;
-            break;
-        }
-    }
+    const currentBreakpoint = getCurrentBreakpoint();
     for(let i = currentBreakpoint; i >= 0; i--) {
         result = elem.getAttribute(queries[i]);
         if (result) {
@@ -78,7 +104,7 @@ function initCoordTracking(obj, trigger, positioning, hasX, hasY, params) {
             if (positioning == 'abs') {
                 obj.style.left = newCoord.x + 'px';
             } else {
-                translation.x = newCoord.x + 'px';
+                translation.x = newCoord.x;
             }
             totalError += Math.abs(target.x - curr.x);
         }
@@ -90,12 +116,15 @@ function initCoordTracking(obj, trigger, positioning, hasX, hasY, params) {
             if (positioning == 'abs') {
                 obj.style.top = newCoord.y + 'px';
             } else {
-                translation.y = newCoord.y + 'px';
+                translation.y = newCoord.y;
             }
             totalError += Math.abs(target.y - curr.y);
         }
         if (positioning == 'rel') {
-            obj.style.transform = `translate(${translation.x}, ${translation.y})`;
+            obj.style.transform = `translate(${translation.x}px, ${translation.y}px)`;
+        }
+        if (positioning == 'custom') {
+            obj.style[params.customProperty] = params.customChange(translation.x, translation.y);
         }
         if (totalError < tolerance) {
             clearInterval(coordInt);
@@ -132,28 +161,30 @@ function getBlockList(firstId, lastId) {
 }
 
 /* утилита для настройки иконки бургера */
-function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFunction) {
+function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFunction, burgerBlock) {
     $(triggerBlock).css({
         position: 'fixed',
         width: '100vw',
         height: '100vh',
         top: '0',
         left: '0',
-        'z-index': '999999999',
+        'z-index': '9999',
         'pointer-events': 'none'
     });
+    const burgerLinks = burgerBlock.querySelectorAll('a');
 
     if (isTriggerCustom) {
-        triggerElems.customOn.addEventListener("click", () => {
+        let isOpened = false;
+        function customToggle() {
             toggleFunction();
-            triggerElems.customOn.style.display = "none";
-            triggerElems.customOff.style.display = "flex";
-        });
-        triggerElems.customOff.addEventListener("click", () => {
-            toggleFunction();
-            triggerElems.customOn.style.display = "flex";
-            triggerElems.customOff.style.display = "none";
-        });
+            triggerElems.customOn.style.display = isOpened ? "flex" : "none";
+            triggerElems.customOff.style.display = isOpened ? "none" : "flex";
+            isOpened = !isOpened;
+        }
+        triggerElems.customOn.addEventListener("click", customToggle);
+        triggerElems.customOff.addEventListener("click", customToggle);
+        burgerLinks.forEach(link => link.addEventListener("click", customToggle));
+
         triggerElems.customOff.style.display = "none";
         triggerElems.customOn.style.pointerEvents = "auto";
         triggerElems.customOff.style.pointerEvents = "auto";
@@ -176,7 +207,8 @@ function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFun
             height: triggerElems.triggerLineHeight,
             'background-color': triggerElems.closedTriggerColor
         });
-        burgerButton.addEventListener('click', () => {
+
+        function stdToggle() {
             toggleFunction();
             burgerButton.classList.toggle('open');
             if (burgerButton.classList.contains('open')) {
@@ -184,9 +216,33 @@ function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFun
             } else {
                 $(burgerButton).children('span').css('background-color', triggerElems.closedTriggerColor);
             }
-        });
+        }
+        burgerButton.addEventListener('click', stdToggle);
+        burgerLinks.forEach(link => link.addEventListener("click", stdToggle));
     }
 
+}
+
+/* показ разных элементов для разных браузеров */
+function differOnBrowser_init(params) {
+    const blocksToHide = params.blocksToHide || null;
+    const blocksToShow = params.blocksToShow || null;
+    const browsers = params.browsers;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const isBrowserListed = browsers.includes(getBrowserName());
+        if (isBrowserListed) {
+            hideBlocks(blocksToHide);
+        } else {
+            hideBlocks(blocksToShow);
+        }
+    });
+
+    function hideBlocks(blocks) {
+        if (blocks) {
+            $(blocks).remove();
+        }
+    }
 }
 
 /* вырисовка вектора */
@@ -1289,7 +1345,7 @@ function uniBurger_init(params) {
     }
 
     // инициализация триггера
-    setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleBurger);
+    setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleBurger, burgerBlock);
 
     $(burgerBlock).wrap('<div class="burgerWrapper"></div>');
     const burgerWrapper = document.querySelector('.burgerWrapper');
@@ -1392,7 +1448,6 @@ function uniBurger_init(params) {
 
     function toggleBurger() {
         if (burgerTimeout) {
-            console.log("fuck me")
             clearTimeout(burgerTimeout);
             burgerTimeout = null;
             resetState();
@@ -1410,7 +1465,7 @@ function uniBurger_init(params) {
             burgerBlock.classList.add('burgerHidden');
             burgerBlock.classList.remove('burgerShown');
             burgerTimeout = setTimeout(() => {
-                document.documentElement.style.overflowY = 'auto';
+                document.documentElement.style.overflowY = 'initial';
                 $(burgerWrapper).css(hiddenStyle);
                 burgerTimeout = null;
             }, 1000*burgerElemsTransTime);
@@ -1426,12 +1481,10 @@ function uniBurger_init(params) {
         } else {
             burgerBlock.classList.add('burgerHidden');
             burgerBlock.classList.remove('burgerShown');
-            document.documentElement.style.overflowY = 'auto';
+            document.documentElement.style.overflowY = 'initial';
             $(burgerWrapper).css(hiddenStyle);
         }
     }
-
-    burgerLinks.forEach(burgerLink => burgerLink.addEventListener('click', toggleBurger));
 
     window.onresize = burgerReshape;
 }
@@ -1536,9 +1589,8 @@ function pushingBurger_init(params) {
     }
 
     // инициализация триггера
-    setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleBurger);
+    setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleBurger, burgerBlock);
 
-    $(burgerLinks).on('click', toggleBurger);
     if (params.addTriggers) {   // если надо добавить триггеры
         const addTriggers = document.querySelectorAll(params.addTriggers);
         $(addTriggers).on('click', toggleBurger);
@@ -2271,11 +2323,11 @@ function cursorMask_init(params) {
     if ($(window).width() > minWidth) {
         maskingPages.forEach((page, i) => {
             const originalPage = originalPages[i];
-            page.style.position = 'absolute';
             page.style.width = window.getComputedStyle(originalPage).width;
             page.style.height = window.getComputedStyle(originalPage).height;
+            page.style.position = 'absolute';
             page.style.top = $(originalPage).offset().top + 'px';
-            page.style.clipPath = `circle(${clipRadius} at -100px -100px)`;
+            page.style.clipPath = `circle(${clipRadius}px at -100px -100px)`;
             page.style.zIndex = '50';
         });
 
@@ -2318,6 +2370,123 @@ function bgChange_init(params) {
             }
         });
         body.style.backgroundColor = colors[currentColor];
+    }
+}
+
+
+// движение элемента по пути
+function moveAlongThePath_init (params) {
+    const paths = params.paths;
+    const elemCont = params.elem ? document.querySelector(params.elem) : (console.error("Не задан элемент"))();
+    const elem = params.elem ? document.querySelector(params.elem + ' div') : (console.error("Не задан элемент"))();
+    const isRotating = params.isRotating || false;
+    const isContinious = params.isContinious || false;
+    const easeTime = params.easeTime || 0.5;
+    const easeFunction = params.easeFunction || 'ease-in-out';
+    let offset = params.offset || 50;
+    const activeHeight = params.activeHeight || 0;
+    const isSmooth = params.isSmooth || false;
+    const delaySpeed = params.delaySpeed || 1;
+    const minWidth = params.minWidth || 0;
+
+    let isAnimHappened = false;
+    const elemTop = $(elem).offset().top + $(elem).height()/2;
+    const wh = $(window).height();
+    offset = wh*offset/100;
+
+    if ($(window).width() > minWidth) {
+        const currentBreakpoint = getCurrentBreakpoint();
+        const tildaBreakpoints = [1200, 980, 640, 480, 320];
+        let path;
+        for (let i = currentBreakpoint; i >= 0; i--) {
+            const ind = tildaBreakpoints[i];
+            if (paths[ind]) {
+                path = paths[ind];
+                break;
+            }
+        }
+        if (!path) {
+            console.error("Неправильно заданы пути");
+        }
+    
+        elem.style.offsetRotate = isRotating ? 'auto' : '0deg';
+        elem.style.offsetPath = `path("${path}")`;
+        replaceElement();
+        if (isContinious) {
+            if (isSmooth) {
+                initCoordTracking(elem, 'scroll', 'custom', true, false, {
+                    customProperty: "offset-distance",
+                    customChange: (x,y) => `${x}%`,
+                    delaySpeed,
+                    tolerance: 0.1
+                });
+            }
+            moveOnScroll();
+            if (isSmooth) {
+                document.addEventListener('scroll', moveSmoothOnScroll);
+            } else {
+                document.addEventListener('scroll', moveOnScroll);
+            }
+        } else {
+            showOnScroll();
+            document.addEventListener('scroll', showOnScroll);
+        }
+    }
+
+    function replaceElement() {
+        const elemContCoords = {
+            x: elemCont.getBoundingClientRect().x,
+            y: elemCont.getBoundingClientRect().y
+        };
+        const elemCoords = {
+            x: elem.getBoundingClientRect().x,
+            y: elem.getBoundingClientRect().y
+        };
+        $(elem).css({
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            top: `${elemContCoords.y - elemCoords.y}px`,
+            left: `${elemContCoords.x - elemCoords.x}px`
+        });
+    }
+
+    function getProgress() {
+        const st = $(window).scrollTop();
+        return st + wh - elemTop - offset;
+    }
+
+    function showOnScroll() {
+        if (!isAnimHappened && getProgress() > 0) {
+            isAnimHappened = true;
+            elem.style.transition = `offset-distance ${easeTime}s ${easeFunction}`;
+            elem.style.offsetDistance = '100%';
+        }
+    }
+
+    function moveSmoothOnScroll() {
+        const progress = getProgress();
+        if (progress < 0) {
+            elem.setAttribute('data-target-x', 0);
+        } else if (progress < activeHeight) {
+            const percetage = 100*progress/activeHeight;
+            elem.setAttribute('data-target-x', percetage);
+        } else {
+            elem.style.offsetDistance = '100%';
+            elem.setAttribute('data-target-x', '100');
+        }
+    }
+
+    function moveOnScroll() {
+        const progress = getProgress();
+        if (progress < 0) {
+            elem.style.offsetDistance = '0';
+        } else if (progress < activeHeight) {
+            const percetage = 100*progress/activeHeight;
+            elem.style.offsetDistance = `${percetage}%`;
+        } else {
+            elem.style.offsetDistance = '100%';
+        }
     }
 }
 
@@ -2422,5 +2591,243 @@ function circleBg_init(params) {
             '-webkit-clip-path': `circle(0 at ${coords.x}px ${coords.y}px)`,
             'clip-path': `circle(0 at ${coords.x}px ${coords.y}px)`
         });
+    }
+}
+
+
+// слежка за мышкой
+function mouseTrack_init(params) {
+    if (!document.querySelector(params.trackElement)) {
+        console.error("Неправильно задан селектор элемента");
+        return;
+    };
+    if (params.mode != "shift" && params.mode != "rotate") {
+        console.error("Неправильно задан параметр MODE, значение по умолчанию - 'shift'");
+    }
+
+    const trackElement = document.querySelector(params.trackElement),
+        maxElementShift = params.maxElementShift || 50,
+        mode = params.mode || "shift",
+        minWidth = params.minWidth || 1200;
+
+    const maxMouseShift = {
+        x: $(window).width(),
+        y: $(window).height()
+    };
+
+    if ($(window).width() > minWidth) {
+        if (mode == "rotate") {
+            document.addEventListener('mousemove', mouseRotater);
+        } else {
+            initCoordTracking(trackElement, 'mousemove', 'rel', true, true, {framerate: 10, speed: 0.05});
+            document.addEventListener('mousemove', mouseShifter);
+        }
+    }
+
+    function getElementBasePoint() {
+        const elementRect = trackElement.getBoundingClientRect();
+        return {
+            x: elementRect.x + elementRect.width/2,
+            y: elementRect.y + elementRect.height/2
+        };
+    };
+
+    function getCurrentMouseShift(e) {
+        const elementBasePoint = getElementBasePoint();
+        return {
+            x: (e.clientX - elementBasePoint.x),
+            y: (e.clientY - elementBasePoint.y)
+        };
+    }
+
+    function mouseShifter(e) {
+        const currentShift =  getCurrentMouseShift(e);
+        trackElement.setAttribute('data-target-x', maxElementShift*currentShift.x/maxMouseShift.x);
+        trackElement.setAttribute('data-target-y', maxElementShift*currentShift.y/maxMouseShift.y);
+    }
+
+    function getAtan(shift) {
+        const radToGrad = (rad) => rad * 180 / Math.PI;
+
+        const { x, y } = shift;
+        if (x == 0) {
+            if (y >= 0) {
+                return 90;
+            }
+            return -90;
+        }
+        if (x > 0) {
+            return radToGrad(Math.atan(y / x));
+        }
+        return 180 + radToGrad(Math.atan(y / x));
+    };
+
+    function mouseRotater(e) {
+        const currentShift = getCurrentMouseShift(e);
+        trackElement.style.transform = `rotate(${getAtan(currentShift)}deg)`;
+    }
+}
+
+
+// прелоудер
+function preloader_init(params) {
+    const startTime = Date.now();
+    const blockId = params.block;
+    const isWaiting = params.isWaiting !== undefined ? params.isWaiting : true;
+    const delay = params.delay || 0;
+    const animTime = params.animTime || 1;
+    const animFunction = params.animFunction || 'linear';
+    const howToClose = params.howToClose || 'fade';
+
+    const block = document.querySelector(blockId);
+    if (!block) return console.error("Неправильно указан id блока");
+
+    $(block).css({
+        position: 'fixed',
+        width: '100vw',
+        height: '100vh',
+        'z-index': '99999999',
+        top: '0',
+        left: '0',
+        transform: 'translate(0)',
+        transition: `${animTime}s ${animFunction}`
+    });
+    $('body').css('overflow', 'hidden');
+
+    if (isWaiting) {
+        window.onload = closePreloader;
+    } else {
+        setTimeout(() => {
+            animatePreloader();
+        }, delay*1000);
+    }
+
+    function closePreloader() {
+        const timeDiff = Date.now() - startTime;
+        if (timeDiff > delay*1000) {
+            animatePreloader();
+        } else {
+            setTimeout(() => {
+                animatePreloader();
+            }, delay*1000 - timeDiff);
+        }
+    }
+
+    function animatePreloader() {
+        switch (howToClose) {
+            case 'go-up':
+                block.style.transform = 'translate(0, -100vh)';
+                break;
+            case 'go-left':
+                block.style.transform = 'translate(-100vw, 0)';
+                break;
+            case 'go-down':
+                block.style.transform = 'translate(0, 100vh)';
+                break;
+            case 'go-right':
+                block.style.transform = 'translate(100vw, 0)';
+                break;
+            default:
+                block.style.opacity = '0';
+                break;
+        }
+        setTimeout(() => {
+            block.style.display = 'none';
+        }, animTime*1000);
+        $('body').css('overflow', 'auto');
+    }
+}
+
+
+// обрезка текста
+function textWrap_init(params) {
+    const textBlock = document.querySelector(params.text + ' div');
+    if (!textBlock) return console.error('Неправильно задан селектор элемента');
+    const trigger = params.trigger ? document.querySelector(params.trigger) : textBlock;
+    if (!trigger) return console.error('Неправильно задан селектор триггера');
+    const isTriggerMoving = params.isTriggerMoving || false;
+    const isTriggerFlipping = params.isTriggerFlipping || false;
+    const numLinesArr = params.numLines;
+    let numLines = 3;
+    const animTime = params.animTime || 0.5;
+    const animFunction = params.animFunction || 'ease-in-out';
+    const minWidth = params.minWidth || 0;
+
+    const canTriggerMove = isTriggerMoving && trigger !== textBlock;
+
+    if (typeof numLinesArr === 'object') {
+        const currentBreakpoint = getCurrentBreakpoint();
+        const tildaBreakpoints = [1200, 980, 640, 480, 320];
+        for (let i = currentBreakpoint; i >= 0; i--) {
+            const ind = tildaBreakpoints[i];
+            if (numLinesArr[ind]) {
+                numLines = numLinesArr[ind];
+                break;
+            }
+        }
+    } else {
+        numLines = numLinesArr;
+    }
+
+    const lineHeight = parseInt(window.getComputedStyle(textBlock).lineHeight);
+    const totalLines = textBlock.offsetHeight / lineHeight;
+    const shift = lineHeight*numLines;
+    const triggerShift = $(textBlock).height() - shift;
+    let isClipped = true;
+    let clipTimeout;
+
+    if ($(window).width() > minWidth) {
+        if (totalLines <= numLines) {
+            if (trigger !== textBlock) {
+                trigger.style.display = 'none';
+            }
+            return;
+        }
+
+        $(textBlock).css({
+            'clip-path': `polygon(0 0, 100% 0, 100% ${shift}px, 0 ${shift}px`,
+            display: '-webkit-box',
+            '-webkit-line-clamp': `${numLines}`,
+            '-webkit-box-orient': 'vertical',
+            overflow: 'hidden',
+            transition: `clip-path ${animTime}s ${animFunction}`
+        });
+        trigger.style.cursor = 'pointer';
+        if (canTriggerMove) {
+            $(trigger).css('transform', `translateY(-${triggerShift}px)`);
+            setTimeout(() => $(trigger).css('transition', `transform ${animTime}s ${animFunction}`))
+        }
+    
+        trigger.addEventListener('click', toggleTextClip);
+    }
+
+    function toggleTextClip() {
+        if (isClipped) {
+            if (clipTimeout) {
+                clearTimeout(clipTimeout);
+            }
+            $(textBlock).css({
+                'clip-path': `polygon(0 0, 100% 0, 100% 100%, 0 100%)`,
+                '-webkit-line-clamp': 'initial'
+            });
+            if (canTriggerMove) {
+                $(trigger).css('transform', `translateY(0)`);
+            }
+            if (isTriggerFlipping) {
+                $(trigger).children().css('transform', 'rotate(0)');
+            }
+        } else {
+            $(textBlock).css('clip-path', `polygon(0 0, 100% 0, 100% ${shift}px, 0 ${shift}px`);
+            clipTimeout = setTimeout(() => {
+                $(textBlock).css('-webkit-line-clamp', `${numLines}`);
+            }, 1000*animTime);
+            if (canTriggerMove) {
+                $(trigger).css('transform', `translateY(-${triggerShift}px)`);
+            }
+            if (isTriggerFlipping) {
+                $(trigger).children().css('transform', 'rotate(180deg)');
+            }
+        }
+        isClipped = !isClipped;
     }
 }
