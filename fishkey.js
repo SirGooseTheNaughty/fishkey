@@ -2732,7 +2732,7 @@ function preloader_init(params) {
                 break;
         }
         setTimeout(() => {
-            block.style.display = 'none';
+            $(block).remove();
         }, animTime*1000);
         $('body').css('overflow', 'auto');
     }
