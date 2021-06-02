@@ -2813,6 +2813,9 @@ function textWrap_init(params) {
             $(trigger).css('transform', `translateY(-${triggerShift}px)`);
             setTimeout(() => $(trigger).css('transition', `transform ${animTime}s ${animFunction}`))
         }
+        if (isTriggerFlipping) {
+            $(trigger).children().css('transform', 'rotate(180deg)');
+        }
     
         trigger.addEventListener('click', toggleTextClip);
     }
