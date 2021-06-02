@@ -2776,7 +2776,7 @@ function textWrap_init(params) {
         const tildaBreakpoints = [1200, 980, 640, 480, 320];
         for (let i = currentBreakpoint; i >= 0; i--) {
             const ind = tildaBreakpoints[i];
-            if (numLinesArr[ind]) {
+            if (typeof numLinesArr[ind] == 'number') {
                 numLines = numLinesArr[ind];
                 break;
             }
