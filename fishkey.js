@@ -3223,6 +3223,26 @@ function poppingCards__init(params) {
     }
 }
 
+function poppingCards__std (params) {
+    poppingCards__init({
+        cardsSelector: '[class*="__content"]',
+        itemsSelectors: [
+            '[class*="__bgimg"]',
+            '[class*="__title"]',
+            '[class*="__price"]'
+        ],
+        zPositions: [
+            20,
+            50,
+            35
+        ],
+        isCustom: false,
+        coeff: params.coeff || 20,
+        animTime: params.animTime || 0.5,
+        easeFunction: 'ease'
+    });
+}
+
 
 // градиент вокруг курсора
 function cursorHalo_init(params) {
