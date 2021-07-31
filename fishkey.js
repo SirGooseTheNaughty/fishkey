@@ -47,6 +47,32 @@ function getElemDim (elem, dim) {
         `data-field-${dim}-res-480-value`,
         `data-field-${dim}-res-320-value`
     ];
+    const units = elem.getAttribute(`data-field-${dim}units-value`);
+    const currentBreakpoint = getCurrentBreakpoint();
+    for(let i = currentBreakpoint; i >= 0; i--) {
+        result = elem.getAttribute(queries[i]);
+        if (result) {
+            if (units === '%') {
+                if(dim === 'width' || dim === 'left' || dim === 'right') {
+                    return $(window).width() * result / 100;
+                }
+                return $(window).height() * result / 100;
+            }
+            return result;
+        }
+    }
+}
+
+/* утилита для получения любях параметров элемента на разной ширине экрана */
+function getElemParam (elem, dim) {
+    let result = null;
+    const queries = [
+        `data-${dim}`,
+        `data-${dim}-res-960`,
+        `data-${dim}-res-640`,
+        `data-${dim}-res-480`,
+        `data-${dim}-res-320`
+    ];
     const currentBreakpoint = getCurrentBreakpoint();
     for(let i = currentBreakpoint; i >= 0; i--) {
         result = elem.getAttribute(queries[i]);
@@ -145,7 +171,17 @@ function initCoordTracking(obj, trigger, positioning, hasX, hasY, params) {
             obj.style.transform = `translate(${translation.x}px, ${translation.y}px)`;
         }
         if (positioning == 'custom') {
-            obj.style[params.customProperty] = params.customChange(translation.x, translation.y);
+            if (typeof params.customProperty === 'string') {
+                obj.style[params.customProperty] = params.customChange(translation.x, translation.y);
+            } else {
+                params.customProperty.forEach((property, i) => {
+                    if (params.isAttr[i]) {
+                        obj.setAttribute(property, params.customChange[i](translation.x, translation.y));
+                    } else {
+                        obj.style[property] = params.customChange[i](translation.x, translation.y);
+                    }
+                });
+            }
         }
         if (totalError < tolerance) {
             clearInterval(coordInt);
@@ -241,7 +277,6 @@ function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFun
         burgerButton.addEventListener('click', stdToggle);
         burgerLinks.forEach(link => link.addEventListener("click", stdToggle));
     }
-
 }
 
 /* показ разных элементов для разных браузеров */
@@ -269,7 +304,7 @@ function differOnBrowser_init(params) {
 /* вырисовка вектора */
 function vectorDraw_init(params) {
     let { selectors, svgs, trigger, hoverTriggers, offsets } = params;
-    const strokeWidth = params.strokeWidth || 0.5;
+    const strokeWidth = isNaN(params.strokeWidth) ? 0.5 : params.strokeWidth;
     const animFunction = params.animFunction || 'ease';
     const animTime = params.animTime || 0.5;
     const minWidth = params.minWidth || 0;
@@ -302,8 +337,12 @@ function vectorDraw_init(params) {
             logoPaths[i].removeAttribute("fill");
             const desiredWidth = getElemDim(space, "width");
             const coeff = desiredWidth/(+space.querySelector('svg').getAttribute('width'));
-            space.querySelector('svg').style.transform = `scale(${coeff})`;
-            space.querySelector('svg').style.transformOrigin = 'top left';
+            $(space).children('svg').css({
+                transform: `scale(${coeff})`,
+                transformOrigin: 'top left',
+                position: 'absolute',
+                top: '0'
+            });
         });
         
         if (trigger == 'hover') {
@@ -845,6 +884,7 @@ function textApp_init(parameters) {
     const animSpeed = parameters.animSpeed || 400;
     const wordSpeed = parameters.wordSpeed || 50;
     const offsets = parameters.offsets || null;
+    const delayFirst = parameters.delayFirst || 0;
     const isHiddenByDefault = parameters.isHiddenByDefault || false;
     const triggerBlocks = parameters.triggerBlocks ? document.querySelectorAll(parameters.triggerBlocks) : null;
     const txtAppWordConts = [];
@@ -861,7 +901,7 @@ function textApp_init(parameters) {
             }
 
             txtAppCont = txtAppCont.firstElementChild;
-            const txtApp = txtAppCont.textContent;
+            const txtApp = txtAppCont.innerHTML;
             let txtAppWords = [];
             if (divider == 'w') {
                 txtAppWords = txtApp.split(' ');
@@ -888,9 +928,24 @@ function textApp_init(parameters) {
                                             </p>${i !== txtAppWords.length - 1 ? '<span> </span>' : ''}`;
                 });
             } else {
+                let htmlElement = '';
                 txtAppWords = txtApp.split('');
                 txtAppCont.innerHTML = '';
                 txtAppWords.forEach((word, i) => {
+                    if (word === '<') {
+                        htmlElement = '<';
+                        return;
+                    }
+                    if (word === '>') {
+                        htmlElement += '>';
+                        txtAppCont.innerHTML += htmlElement;
+                        htmlElement = '';
+                        return;
+                    }
+                    if (htmlElement) {
+                        htmlElement += word;
+                        return;
+                    }
                     if (word == ' ') {
                         txtAppCont.innerHTML += `<span> </span>`;
                     } else {
@@ -987,9 +1042,15 @@ function textApp_init(parameters) {
         const appeared = txtAppWordConts.map((vector, i) => $(vector).offset().top < $(window).scrollTop() + $(window).height() - offsets[i]);
         appeared.forEach((isVisible, i) => {
             if (isVisible) {
-                txtAppear(i);
+                if (i === 0 && delayFirst) {
+                    setTimeout(() => {
+                        txtAppear(i);
+                    }, delayFirst * 1000);
+                } else {
+                    txtAppear(i);
+                }
             }
-        })
+        });
     }
 }
 
@@ -1528,10 +1589,9 @@ function pushingBurger_init(params) {
         burgerWidth = params.burgerWidth || $(window).width(),
         easeTime = params.easeTime || 0.8,
         easeFunction = params.easeFunction || 'cubic-bezier(.8,0,.2,1)',
-        burgerLinks = burgerBlock.querySelectorAll('a'),
         burgerArtboard = burgerBlock.querySelector('div').firstElementChild,
         burgerVh = burgerArtboard.getAttribute('data-artboard-height_vh'),
-        burgerHeight = burgerVh ? +burgerVh*$(window).height()/100 : burgerArtboard.getAttribute('data-artboard-height');
+        burgerHeight = burgerVh ? +burgerVh*$(window).height()/100 : getElemParam(burgerArtboard, 'artboard-height');
     
     const allBlocks = document.querySelectorAll('[id ^= "rec"]'),
         allUsedBlocks = [...allBlocks].filter(block => !block.querySelector('.t-popup') && block != triggerBlock && block != burgerBlock);
@@ -1757,7 +1817,8 @@ function cursorChange_init(params) {
                 $(triggers[i]).css('cursor', 'none');
             }
             $(triggers[i]).attr('data-makes-cursor-state', i);
-            $(triggers[i]).mouseenter(turnCursorStateOn).mouseleave(turnCursorStateOff);
+            $(triggers[i]).on('mouseenter', turnCursorStateOn);
+            $(triggers[i]).on('mouseleave', turnCursorStateOff);
         }
 
         function turnCursorStateOn () {
@@ -1836,6 +1897,7 @@ function bgPhotos_init(params) {
     const elemSelectors = params.elements,
         photoSelectors = params.photos,
         delaySpeed = params.delaySpeed || 0.1,
+        isStandartLayerOrder = params.isStandartLayerOrder || false,
         elems = [],
         photos = [];
 
@@ -1861,10 +1923,12 @@ function bgPhotos_init(params) {
         photos.forEach((photo, i) => {
             $(photo).attr('assocWith', i);
             $(photo).css({
-                'z-index': '1',
                 'opacity': '0',
                 'transition': 'opacity 0.25s ease, transform 0.1s linear'
             });
+            if (!isStandartLayerOrder) {
+                photo.style.zIndex = '1';
+            }
         });
     
         $(elems).on('mouseenter', function (e) {
@@ -2033,6 +2097,7 @@ function cornerPhotos_init(params) {
         transitionTime = params.transitionTime || 0.5,
         isHorScroll = params.isHorScroll || false,
         minWidth = params.minWidth || 0,
+        delayFirst = params.delayFirst || 0,
         offsets = [];
     let showingRule;
     const ww = $(window).width(),
@@ -2095,13 +2160,19 @@ function cornerPhotos_init(params) {
         });
     
         document.addEventListener('scroll', showOnScroll);
+        showOnScroll();
     }
     
     function showOnScroll() {
         cornerPhotos.forEach((photo, i) => {
             if(showingRule(photo, i) && (photo.getAttribute('data-clipped') == 'true')) {
-                $(photo).css('clip-path', 'polygon(0 0, 100% 0, 100% 100%, 0 100%)');
                 photo.setAttribute('data-clipped', 'false');
+                if (delayFirst && i ===0) {
+                    return setTimeout(() => {
+                        $(photo).css('clip-path', 'polygon(0 0, 100% 0, 100% 100%, 0 100%)');
+                    }, delayFirst * 1000);
+                }
+                $(photo).css('clip-path', 'polygon(0 0, 100% 0, 100% 100%, 0 100%)');
             }
         });
     }
@@ -2130,17 +2201,19 @@ function horDrag_init(params) {
 
         const elements = horDragObj.querySelectorAll('.tn-elem'),
             lefts = [],
-            widths = [];
+            widths = [],
+            rights = [];
 
         elements.forEach((el, i) => {
             lefts[i] = +el.getBoundingClientRect().x;
-            widths[i] = +el.getAttribute('data-field-width-value');
+            widths[i] = +getElemDim(el, 'width');
+            rights[i] = lefts[i] + widths[i];
             el.style.pointerEvents = 'none';
         });
 
         const offsetLeft = Math.min.apply(Math, lefts),
-            maxRight = Math.max.apply(Math, lefts),
-            rightCorner = offsetLeft + maxRight + widths[lefts.indexOf(maxRight)];
+            maxRight = Math.max.apply(Math, rights),
+            rightCorner = offsetLeft + maxRight;
 
         $(horDragObj).css({
             overflow: 'visible',
@@ -2368,27 +2441,27 @@ function bgChange_init(params) {
     const { colors, breakpointBlocks } = params,
         minWidth = params.minWidth || 0,
         animTime = params.animTime || 0.5;
-    const breakpoints = [],
-        offsets = [];
     const body = document.querySelector('body');
 
     if ($(window).width() > minWidth) {
         bgChange();
         setTimeout(() => {
             body.style.transition = `background-color ${animTime}s linear`;
-            breakpointBlocks.forEach((block, i) => {
-                offsets[i] = offsets[i] ? $(window).height()*params.offsets[i]/100 : offsets[0] || 0;
-                breakpoints[i] = $(block).offset().top + offsets[i];
-            });
-        }, 50);
+        }, 10);
         document.addEventListener('scroll', bgChange);
     }
 
     function bgChange() {
         const scr = $(window).scrollTop();
         let currentColor = 0;
-        breakpoints.forEach((breakpoint, i) => {
-            if (scr > breakpoint) {
+        breakpointBlocks.forEach((block, i) => {
+            let offset = 0;
+            if ( !isNaN(params.offsets[i]) ) {
+                offset = $(window).height()*params.offsets[i]/100;
+            } else if ( !isNaN(params.offsets[0]) ) {
+                offset = $(window).height()*params.offsets[0]/100;
+            }
+            if (scr > $(block).offset().top + offset) {
                 currentColor = i + 1;
             }
         });
@@ -2864,7 +2937,6 @@ function joinElements(params) {
         console.error('Не заданы селекторы');
         return;
     }
-    const areBordersHidden = params.areBordersHidden !== undefined ? params.areBordersHidden : true;
 
     const docRecs = Array.prototype.slice.call(document.querySelectorAll('*[id^="rec"]'));
     const data = {
@@ -2872,29 +2944,30 @@ function joinElements(params) {
         wrapperContents: [],
         joiningElements: []
     };
-    params.wrapperSelectors.forEach((sel, i) => {
-        const wrapper = document.querySelector(sel);
-        if (!wrapper) {
-            console.error(`Неправильно задан ${i+1}-й селектор ${sel}`);
-            return;
-        }
+    const totalWrappers = params.wrapperSelectors.join(', ');
+    const wrappers = Array.from(document.querySelectorAll(totalWrappers));
+    wrappers.forEach((wrapper, i) => {
         data.wrappers.push(wrapper);
-        data.wrapperContents.push(data.wrappers[i].querySelector('.tn-atom'));
-        if (areBordersHidden) {
-            data.wrapperContents[i].style.border = 'none';
-        }
-        const wrapperRec = docRecs.find(rec => Boolean(rec.querySelector(sel)));
+        data.wrapperContents.push(wrapper.querySelector('.tn-atom'));
+        const wrapperRec = docRecs.find(rec => Boolean(rec.querySelector(`.${Array.from(wrapper.classList).join('.')}`)));
         const recElements = Array.prototype.slice.call(wrapperRec.querySelectorAll('*[data-elem-id]'));
-        data.joiningElements.push(recElements.filter(elem => filterJoinedElements(elem, data.wrappers[i])));
+        data.joiningElements.push(recElements.filter(elem => filterJoinedElements(elem, wrapper)));
     });
     let currentBreakpoint = getCurrentBreakpoint();
-
     setTimeout(() => {
         data.joiningElements.forEach((JE, i) => {
             JE.forEach(elem => {
+                const innerElem = elem.querySelector('.tn-atom');
+                const style = getComputedStyle(innerElem);
+                const {backgroundColor} = style;
+                const borderColor = style.borderColor || style.borderInlineStartColor;
                 data.wrapperContents[i].style.verticalAlign = 'inherit';
                 $(elem).appendTo(data.wrapperContents[i]);
                 elem.classList.add('leftTop');
+                $(innerElem).css({
+                    'background-color': backgroundColor || 'transparent',
+                    'border-color': borderColor || 'transparent',
+                });
                 JE.forEach(elem => repositionElement(elem, i));
             })
         });
@@ -2914,7 +2987,8 @@ function joinElements(params) {
     function repositionElement (elem, i) {
         const rect = getElementRect(elem);
         const wrapRect = getElementRect(data.wrappers[i]);
-        elem.style.transform = `translate(${rect.x - wrapRect.x}px, ${rect.top - wrapRect.top}px)`;
+        elem.setAttribute('data-original-transform', `translateX(${rect.x - wrapRect.x}px) translateY(${rect.top - wrapRect.top}px)`);
+        elem.style.transform = `translateX(${rect.x - wrapRect.x}px) translateY(${rect.top - wrapRect.top}px)`;
     }
 
     function filterJoinedElements (elem, wrapper) {
@@ -2924,10 +2998,10 @@ function joinElements(params) {
         const rect = getElementRect(elem);
         const wrapRect = getElementRect(wrapper);
         return (
-            rect.x > wrapRect.x
-            && rect.top > wrapRect.top
-            && rect.right < wrapRect.right
-            && rect.bottom < wrapRect.bottom
+            rect.x >= wrapRect.x
+            && rect.top >= wrapRect.top
+            && rect.right <= wrapRect.right
+            && rect.bottom <= wrapRect.bottom
         );
     }
 }
@@ -2996,4 +3070,207 @@ function runningLineBtn_init (params) {
         }
         setInterval(moveLine, 10);
     }
+}
+
+
+// закрашивание текста
+function textColoring_init(params) {
+    const textElement = document.querySelector(params.selector).firstElementChild;
+    if (!textElement) {
+        return console.error('Неправильно задан селектор элемента');
+    }
+    const gradientDirection = params.gradientDirection || 'to right';
+    const fillingColor = params.fillingColor || 'red';
+    const animTime = params.animTime || 0.5;
+    const colorsDiff = params.colorsDiff || 50;
+    const snapBackwards = params.snapBackwards || false;
+    const minWidth = isNaN(params.minWidth) ? 1200 : params.minWidth;
+
+    const standartColor = getComputedStyle(textElement).color;
+    const gradPos = {
+        start: -colorsDiff,
+        end: 0
+    };
+    let interval;
+    const iterTime = 15;
+    const iterGradPosChange = (100 + 2 * colorsDiff) / ((animTime * 1000) / iterTime);
+
+    if ($(window).width() > minWidth) {
+        if (getBrowserName() === 'safari') {
+            textElement.style.transition = `color ${animTime}s`;
+            textElement.addEventListener('mouseenter', () => textElement.style.color = fillingColor);
+            textElement.addEventListener('mouseleave', () =>  textElement.style.color = standartColor);
+            return;
+        }
+
+        textElement.style.color = 'transparent';
+        changeGradPosition();
+
+        textElement.addEventListener('mouseenter', () => {
+            clearInterval(interval);
+            interval = setInterval(incrementGradPos, iterTime);
+        });
+        textElement.addEventListener('mouseleave', () => {
+            clearInterval(interval);
+            if (snapBackwards) {
+                changeGradPosition();
+                gradPos.start = -colorsDiff;
+                gradPos.end = 0;
+            } else {
+                interval = setInterval(decrementGradPos, iterTime);
+            }
+        });
+    }
+
+    function changeGradPosition (start = -colorsDiff, end = 0) {
+        $(textElement).css({
+            background: `linear-gradient(${gradientDirection}, ${fillingColor} ${start}%, ${standartColor} ${end}%)`,
+            '-webkit-background-clip': 'text',
+            backgroundClip: 'text'
+        });
+    }
+    function incrementGradPos () {
+        gradPos.end = gradPos.end + iterGradPosChange;
+        gradPos.start = gradPos.end < 100 ? gradPos.end - colorsDiff : gradPos.start + iterGradPosChange;
+        if (gradPos.start < 0) {
+            gradPos.start = 0;
+        }
+        if (gradPos.start >= 100) {
+            clearInterval(interval);
+        }
+        changeGradPosition(gradPos.start, gradPos.end);
+    }
+    function decrementGradPos () {
+        gradPos.start = gradPos.start - iterGradPosChange;
+        gradPos.end = gradPos.start > 0 ? gradPos.start + colorsDiff : gradPos.end - iterGradPosChange;
+        if (gradPos.end > 100) {
+            gradPos.end = 100;
+        }
+        if (gradPos.end <= 0) {
+            clearInterval(interval);
+        }
+        changeGradPosition(gradPos.start, gradPos.end);
+    }
+}
+
+
+// 3D-карточки
+function poppingCards__init(params) {
+    const cardsSelector = params.cardsSelector;
+    if (!cardsSelector) {
+        console.error('Не задан селектор карточек');
+    }
+    const itemsSelectors = params.itemsSelectors;
+    if (!itemsSelectors) {
+        console.error('Не заданы селекторы элементов карточек');
+    }
+    const zPositions = params.zPositions;
+    if (zPositions.length !== itemsSelectors.length) {
+        console.error('Количество значений zPozitions не совпадает с количеством элементов itemsSelectors');
+    }
+    const coeff = params.coeff || 10;
+    const animTime = params.animTime || 0.4;
+    const easeFunction = params.easeFunction || 'ease';
+    const minWidth = isNaN(params.minWidth) ? 1200 : params.minWidth;
+    const isCustom = params.isCustom || false;
+
+    if ($(window).width() > minWidth) {
+        if (isCustom) {
+            return setTimeout(go, 50);
+        }
+        go();
+    }
+
+    function go () {
+        let cards = Array.from(document.querySelectorAll(cardsSelector));
+        cards = cards.map(card => {
+            const inner = card.querySelector('.tn-atom');
+            return inner || card;
+        });
+        if (!cards.length) {
+            console.error('Неправильно задан селектор карточек');
+        }
+        const cardsData = cards.map(card => {
+            const items = itemsSelectors.map(sel => card.querySelector(sel)).filter(item => item);
+            card.style.transformStyle = 'preserve-3d';
+            const originalTransforms = [];
+            items.forEach((item, i) => {
+                const transform = getComputedStyle(item).transform;
+                originalTransforms[i] = transform === 'none' ? '' : transform;
+                item.style.transition = `all ${animTime}s ${easeFunction}`;
+            });
+            return { card, items, originalTransforms };
+        });
+
+        document.querySelector('#allrecords').classList.add('ddd-cards-body');
+
+        cardsData.forEach((cardData, i) => {
+            cardData.card.addEventListener('mousemove', function (e) {
+                const xAxis = ($(this).offset().left + $(this).width() / 2 - e.pageX) / coeff;
+                const yAxis = ($(this).offset().top + $(this).height() / 2 - e.pageY) / coeff;
+                cardData.card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+            });
+            cardData.card.addEventListener('mouseenter', () => {
+                cardData.card.style.transition = 'none';
+                cardData.items.forEach((item, i) => item.style.transform = `${cardData.originalTransforms[i]} translateZ(${zPositions[i]}px)`);
+            });
+            cardData.card.addEventListener('mouseleave', () => {
+                cardData.card.style.transition = `all ${animTime}s ${easeFunction}`;
+                cardData.card.style.transform = `rotateY(0deg)`;
+                cardData.items.forEach((item, i) => item.style.transform = `${cardData.originalTransforms[i]} translateZ(0)`);
+            });
+        });
+    }
+}
+
+
+// градиент вокруг курсора
+function cursorHalo_init(params) {
+    const color = params.color || 'FFFF00';
+    const radius = !isNaN(params.radius) ? params.radius : 100;
+    const flatRadius = !isNaN(params.flatRadius) ? params.flatRadius : 0;
+    const startOpacity = !isNaN(params.startOpacity) ? params.startOpacity / 100 : 0.5;
+    const blur = !isNaN(params.blur) ? params.blur : 100;
+    const delaySpeed = !isNaN(params.delaySpeed) ? params.delaySpeed : 0.5;
+
+    $('body').append(`
+        <svg class="cursor-halo" viewBox="0 0 ${$(window).width()} ${$(window).height()}" xmlns="http://www.w3.org/2000/svg" style="filter: blur(${blur}px)">
+            <radialGradient id="cursor-halo__gradient">
+                <stop offset="${flatRadius}%" stop-color="${color}" stop-opacity="${startOpacity}"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+            </radialGradient>
+
+            <circle class="cursor-halo__circle" cx="${radius}" cy="${radius}" r="${radius}" stroke-width="0" fill="url(#cursor-halo__gradient)" />
+        </svg>
+    `);
+
+    const circle = document.querySelector('.cursor-halo__circle');
+
+    if (delaySpeed) {
+        initCoordTracking(circle, 'mousemove', 'custom', true, true, {
+            customProperty: ['cx', 'cy'],
+            customChange: [
+                (x, y) => x,
+                (x, y) => y,
+            ],
+            isAttr: [true, true],
+            delaySpeed,
+            tolerance: 0.1
+        });
+        document.addEventListener('mousemove', (e) => {
+            circle.setAttribute('data-target-y', e.clientY);
+            circle.setAttribute('data-target-x', e.clientX);
+        });
+    } else {
+        document.addEventListener('mousemove', (e) => {
+            circle.setAttribute('cy', e.clientY);
+            circle.setAttribute('cx', e.clientX);
+        });
+    }
+
+    function removeFirstOpacity() {
+        $('.cursor-halo').css('opacity', '1');
+        document.removeEventListener('mousemove', removeFirstOpacity);
+    }
+    document.addEventListener('mousemove', removeFirstOpacity);
 }

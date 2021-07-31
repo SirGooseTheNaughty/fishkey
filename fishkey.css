@@ -197,3 +197,19 @@
         transform: translateX(var(--move-final));
     }
 }
+
+/* 3d карточки */
+body:not(.t-body_popupshowed) .ddd-cards-body {
+    perspective: 5000px;
+}
+
+/* градиент вокруг курсора */
+
+.cursor-halo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .25s;
+}
