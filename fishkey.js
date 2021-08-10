@@ -959,7 +959,7 @@ function textApp_init(parameters) {
             txtAppWordConts[contNum] = document.querySelectorAll(`.txtAppWordCont${contNum}-${timeCache}`);
 
             txtAppCont.style.paddingBottom = '0.15em';
-            txtAppCont.style.overflow = 'hidden';
+            txtAppCont.style.overflow = 'visible';
 
             $(txtAppWordConts[contNum]).css({
                 position: 'relative'
