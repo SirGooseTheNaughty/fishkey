@@ -3532,6 +3532,7 @@ function simpleCursor_init(params) {
 
     if (!isMobile()) {
         $('body').append('<canvas class="easy-cursor" width="150" height="150"></canvas>');
+        $('body').css('background-color', 'white');
     
         new Cursor(
             {
