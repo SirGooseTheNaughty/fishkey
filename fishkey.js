@@ -279,6 +279,237 @@ function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFun
     }
 }
 
+/* курсор на canvas */
+class Cursor {
+    constructor (params, items) {
+        this.canvas = document.querySelector(params.selector);
+        this.context = this.canvas.getContext('2d');
+        this.speed = params.speed;
+        this.tolerance = params.tolerance;
+        this.mixBlend = params.mixBlend;
+        this.width = 100;
+        this.height = 100;
+        this.isActive = false;
+        this.targetPos = {
+            x: -100,
+            y: 100
+        };
+        this.items = items.map(item => this.preformItem(item));
+        this.minDelayTimeout = null;
+        this.preformItem = this.preformItem.bind(this);
+        this.redrawLoop = this.redrawLoop.bind(this);
+        this.clearDelay = this.clearDelay.bind(this);
+        this.setIsActive = this.setIsActive.bind(this);
+        this.activateCursor = this.activateCursor.bind(this);
+        this.deactivateCursor = this.deactivateCursor.bind(this);
+        if (this.mixBlend) {
+            this.canvas.style.mixBlendMode = 'difference';
+        }
+        if (params.hideStd) {
+            document.querySelector('body').classList.add('hideCursor');
+        }
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+        window.addEventListener('mousemove', (e) => this.changeTargetPos(e.clientX, e.clientY));
+        try {
+            const that = this;
+            document.querySelectorAll(params.activators).forEach(elem => {
+                elem.addEventListener('mouseenter', that.activateCursor);
+                elem.addEventListener('mouseleave', that.deactivateCursor);
+            });
+        } catch(e) {
+            console.error('Неправильно заданы селекторы активаторов');
+        }
+
+        this.redrawLoop();
+    }
+
+    activateCursor() {
+        this.setIsActive(true);
+    }
+    deactivateCursor() {
+        this.setIsActive(false);
+    }
+
+    preformItem(item) {
+        let { size, rotation, opacity } = item;
+        rotation = isNaN(+rotation) ? 0 : +rotation;
+        opacity = isNaN(+opacity) ? 100 : +opacity;
+        const appearence = {
+            size: {
+                current: +size,
+                target: (item.isAnimated && item.activeStyle && !isNaN(+item.activeStyle.size)) ? +size : null,
+            },
+            rotation: {
+                current: rotation,
+                target: (item.isAnimated && item.activeStyle && !isNaN(+item.activeStyle.rotation)) ? rotation : null,
+            },
+            opacity: {
+                current: opacity,
+                target: (item.isAnimated && item.activeStyle && !isNaN(+item.activeStyle.opacity)) ? opacity : null,
+            }
+        };
+        return {
+            ...item,
+            currentPos: {
+                x: this.targetPos.x,
+                y: this.targetPos.y
+            },
+            appearence
+        }
+    }
+
+    setIsActive(isActive) {
+        this.items.forEach(item => {
+            item.appearence.size.target = (isActive && item.isAnimated) ? item.activeStyle.size || item.size : item.size;
+            item.appearence.rotation.target = (isActive && item.isAnimated) ? item.activeStyle.rotation || item.rotation : item.rotation;
+            item.appearence.opacity.target = (isActive && item.isAnimated) ? item.activeStyle.opacity || item.opacity : item.opacity;
+        });
+    }
+
+    clearDelay() {
+        if (this.minDelayTimeout) {
+            clearTimeout(this.minDelayTimeout);
+            this.minDelayTimeout = null;
+        }
+    }
+
+    changeTargetPos(x, y) {
+        this.targetPos.x = x;
+        this.targetPos.y = y;
+    }
+
+    resizeCanvas() {
+        this.width = document.documentElement.clientWidth;
+        this.height = document.documentElement.clientHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+    }
+
+    drawItem(params) {
+        let figure;
+        const {
+            appearence: {
+                size: { current: currentSize },
+                rotation: { current: currentRotation },
+                opacity: { current: currentOpacity },
+            },
+            currentPos: { x, y }
+        } = params;
+        this.context.save();
+        if (currentRotation) {
+            this.context.translate(x, y);
+            this.context.rotate(currentRotation * Math.PI / 180);
+            this.context.translate(-x, -y);
+        }
+        if (params.stroke) {
+            this.context.strokeStyle = params.stroke;
+        }
+        if (params.fill) {
+            this.context.fillStyle = params.fill;
+        }
+        this.context.globalAlpha = currentOpacity / 100;
+        this.context.lineWidth = params.strokeWidth;
+        switch (params.type) {
+            case 'circle':
+                figure = new Path2D();
+                figure.arc(x, y, currentSize, 0, 2 * Math.PI);
+                if (params.stroke) {
+                    this.context.stroke(figure);
+                }
+                if (params.fill) {
+                    this.context.fill(figure);
+                }
+                break;
+            case 'rect':
+                figure = new Path2D();
+                figure.rect(x - currentSize/2, y - currentSize/2, currentSize, currentSize);
+                if (params.stroke) {
+                    this.context.stroke(figure);
+                }
+                if (params.fill) {
+                    this.context.fill(figure);
+                }
+                break;
+            case 'triangle':
+                const x0 = x - (currentSize / 2),
+                    y0 = y + (currentSize / 2) * Math.tan(30 * Math.PI / 180),
+                    x1 = x,
+                    y1 = y - (currentSize / 2) / Math.cos(30 * Math.PI / 180),
+                    x2 = x + (currentSize / 2),
+                    y2 = y0;
+                if (params.stroke) {
+                    this.context.stroke();
+                }
+                if (params.fill) {
+                    this.context.fill();
+                }
+                this.context.beginPath();
+                this.context.moveTo(x0, y0);
+                this.context.lineTo(x1, y1);
+                this.context.lineTo(x2, y2);
+                this.context.lineTo(x0, y0);
+                break;
+        }
+        this.context.restore();
+    }
+
+    drawItems() {
+        this.items.forEach(item => this.drawItem(item));
+    }
+    
+    redrawLoop() {
+        this.context.clearRect(0, 0, this.width, this.height);
+        this.restyleItems();
+        this.repositionItems();
+        this.drawItems();
+        window.requestAnimationFrame(this.redrawLoop);
+    }
+
+    smoothChange(curr, target, speed) {
+        const c = Number(curr);
+        const t = Number(target);
+        if (!speed) {
+            return t;
+        }
+        const leng = t - c;
+        const rise = 0.8*Math.sign(leng)*Math.cbrt(speed*Math.abs(leng)*Math.abs(leng));
+        if (Math.abs(rise) < this.tolerance) {
+            return t;
+        }
+        return c + rise;
+    }
+
+    restyleItems(isForced = false) {
+        if (this.minDelayTimeout && !isForced) {
+            return;
+        }
+        this.items.forEach(item => {
+            const {
+                isAnimated,
+                appearence: { size, rotation, opacity },
+                activeStyle: { animationSpeed }
+            } = item;
+            size.current = isAnimated ? this.smoothChange(size.current, size.target, animationSpeed) : size.current;
+            rotation.current = isAnimated ? this.smoothChange(rotation.current, rotation.target, animationSpeed) : rotation.current;
+            opacity.current = isAnimated ? this.smoothChange(opacity.current, opacity.target, animationSpeed) : opacity.current;
+        });
+    }
+
+    repositionItems() {
+        if (this.minDelayTimeout) {
+            return;
+        }
+        this.items.forEach(item => {
+            const newX = this.smoothChange(item.currentPos.x, this.targetPos.x, item.speed);
+            const newY = this.smoothChange(item.currentPos.y, this.targetPos.y, item.speed);
+            item.currentPos.x = newX;
+            item.currentPos.y = newY;
+        });
+        this.minDelayTimeout = window.setTimeout(this.clearDelay, this.minDelay);
+    }
+}
+
 /* показ разных элементов для разных браузеров */
 function differOnBrowser_init(params) {
     const blocksToHide = params.blocksToHide || null;
@@ -3293,4 +3524,25 @@ function cursorHalo_init(params) {
         document.removeEventListener('mousemove', removeFirstOpacity);
     }
     document.addEventListener('mousemove', removeFirstOpacity);
+}
+
+
+// курсор на canvas
+function simpleCursor_init(params) {
+
+    if (!isMobile()) {
+        $('body').append('<canvas class="easy-cursor" width="150" height="150"></canvas>');
+    
+        new Cursor(
+            {
+                selector: '.easy-cursor',
+                activators: params.activators,
+                tolerance: 0.2,
+                minDelay: 0.01,
+                mixBlend: params.mixBlend,
+                hideStd: params.hideStd
+            },
+            params.items
+        );
+    }
 }
