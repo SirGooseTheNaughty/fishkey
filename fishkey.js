@@ -2439,7 +2439,9 @@ function horDrag_init(params) {
             lefts[i] = +el.getBoundingClientRect().x;
             widths[i] = +getElemDim(el, 'width');
             rights[i] = lefts[i] + widths[i];
-            el.style.pointerEvents = 'none';
+            if (el.getAttribute('data-elem-type') !== 'button' && !el.querySelector('a') && !el.classList.contains('t-zoomable')) {
+                el.style.pointerEvents = 'none';
+            }
         });
 
         const offsetLeft = Math.min.apply(Math, lefts),
