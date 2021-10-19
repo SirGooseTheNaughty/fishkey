@@ -219,15 +219,7 @@ function getBlockList(firstId, lastId) {
 
 /* утилита для настройки иконки бургера */
 function setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleFunction, burgerBlock) {
-    $(triggerBlock).css({
-        position: 'fixed',
-        width: '100vw',
-        height: '100vh',
-        top: '0',
-        left: '0',
-        'z-index': '9999',
-        'pointer-events': 'none'
-    });
+    triggerBlock.classList.add('triggerBlock');
     const burgerLinks = burgerBlock.querySelectorAll('a');
 
     if (isTriggerCustom) {
