@@ -216,7 +216,6 @@ body:not(.t-body_popupshowed) .ddd-cards-body {
 }
 
 /* градиент вокруг курсора */
-
 .cursor-halo {
     position: fixed;
     top: 0;
@@ -236,4 +235,36 @@ body:not(.t-body_popupshowed) .ddd-cards-body {
 }
 .hideCursor * {
     cursor: none !important;
+}
+
+/* переворачивающийся текст */
+.text-flipped span {
+    transform: translateY(-120%);
+}
+
+/* фоновое аудио */
+.audio-on,
+.audio-off {
+    cursor: pointer;
+}
+.audio-on.hidden,
+.audio-off.hidden {
+    display: none;
+}
+
+/* верхний и нижний блок шторкой */
+#allrecords.has-bg-block > div {
+    z-index: 2;
+    position: relative;
+}
+.bg-block {
+    position: fixed !important;
+    width: 100%;
+    z-index: 1 !important;
+}
+.bg-block.fix-top {
+    top: 0;
+}
+.bg-block.fix-bottom {
+    bottom: 0;
 }

@@ -1,3 +1,5 @@
+const tildaBreakpoints = [1200, 980, 640, 480, 320];
+
 /* утилита для определения браузера */
 /* Названия браузеров: chrome, firefox, safari, explorer, edge, opera, samsung */
 function getBrowserName() {
@@ -27,7 +29,6 @@ function isMobile() {
 
 /* утилита для получения текущего брейкпоинта */
 function getCurrentBreakpoint () {
-    const tildaBreakpoints = [1200, 980, 640, 480, 320];
     const ww = $(window).width();
     for(let i = 0; i < tildaBreakpoints.length; i++) {
         if (ww >= tildaBreakpoints[i]) {
@@ -603,10 +604,11 @@ function vectorWrite_init(params) {
     let logoPaths = [];
     let desiredWidth = 0;
     let coeff = 0;
-    const strokeWidth = params.strokeWidth || 0.5;
-    const offset = params.offset ? params.offset*$(window).height()/100 : 0;
-    let animTime = params.animTime || 0.5;
-    const minWidth = params.minWidth || 0;
+    const strokeWidth = !isNaN(params.strokeWidth) ? params.strokeWidth : 0.5;
+    const offset = !isNaN(params.offset) ? params.offset*$(window).height()/100 : 0;
+    let animTime = !isNaN(params.animTime) ? params.animTime : 0.5;
+    const minWidth = !isNaN(params.minWidth) ? params.minWidth : 0;
+    const delay = !isNaN(params.delay) ? params.delay : 0;
 
     if ($(window).width() > minWidth) {
         const vd_forSVG = document.querySelector(selector);
@@ -645,7 +647,7 @@ function vectorWrite_init(params) {
         const isVisible = $(window).scrollTop() + $(window).height() > $(logoPaths[0]).offset().top + offset;
         if (isVisible) {
             document.removeEventListener('scroll', scrollInit);
-            scrollDraw();
+            window.setTimeout(scrollDraw, delay * 1000);
         }
     }
     function scrollDraw() {
@@ -1182,7 +1184,7 @@ function textApp_init(parameters) {
             txtAppWordConts[contNum] = document.querySelectorAll(`.txtAppWordCont${contNum}-${timeCache}`);
 
             txtAppCont.style.paddingBottom = '0.15em';
-            txtAppCont.style.overflow = 'visible';
+            txtAppCont.style.overflow = 'hidden';
 
             $(txtAppWordConts[contNum]).css({
                 position: 'relative'
@@ -1282,26 +1284,24 @@ function textApp_init(parameters) {
 function typeWriter_init(parameters) {
     const totalSpeed = parameters.totalSpeed || 2000;
     const minWidth = parameters.minWidth || 0;
-    let offset = parameters.offset || 0;
-    const tw_TextElem = document.querySelector(parameters.selector).firstElementChild,
-        tw_Text = tw_TextElem.innerText.split("");
+    const offset = parameters.offset ? $(window).height()*parameters.offset/100 : 0;
+    const tw_TextElem = document.querySelector(parameters.selector).firstElementChild;
+    const tw_Text = tw_TextElem.innerText.split("");
 
     if ($(window).width() > minWidth) {
         tw_TextElem.innerText = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            tw_startWriting();
+            document.addEventListener('scroll', tw_startWriting);
+        });
     }
-
-    offset = $(window).height()*offset/100;
-
-    document.addEventListener('DOMContentLoaded', () => {
-        tw_startWriting();
-        document.addEventListener('scroll', tw_startWriting);
-    })
 
     function tw_write() {
         const speed = totalSpeed / tw_Text.length;
         const tw_interval = setInterval(function() {
             if(!tw_Text[0]){
-                    return clearInterval(tw_interval);
+                return clearInterval(tw_interval);
             }
             tw_TextElem.innerHTML += tw_Text.shift();
         }, speed);
@@ -1635,8 +1635,14 @@ function uniBurger_init(params) {
             'width': '0',
             'height': '0',
             'z-index': '0'
-        },
-        burgerLinks = burgerBlock.querySelectorAll('a');
+        };
+
+    if (!burgerBlock) {
+        return console.error('Неправильно задан селектор блока бургера', params.burgerBlock);
+    }
+    if (!triggerBlock) {
+        return console.error('Неправильно задан селектор блока триггера бургера', params.triggerBlock);
+    }
 
     let burgerTimeout = null;
 
@@ -1809,12 +1815,16 @@ function pushingBurger_init(params) {
             closedTriggerColor: 'black'
         },
         burgerPosition = params.burgerPosition,
-        burgerWidth = params.burgerWidth || $(window).width(),
         easeTime = params.easeTime || 0.8,
         easeFunction = params.easeFunction || 'cubic-bezier(.8,0,.2,1)',
         burgerArtboard = burgerBlock.querySelector('div').firstElementChild,
         burgerVh = burgerArtboard.getAttribute('data-artboard-height_vh'),
-        burgerHeight = burgerVh ? +burgerVh*$(window).height()/100 : getElemParam(burgerArtboard, 'artboard-height');
+        burgerDims = {
+            burgerHeight: burgerVh ? +burgerVh*$(window).height()/100 : getElemParam(burgerArtboard, 'artboard-height'),
+            burgerWidth: params.burgerWidth || $(window).width(),
+            shiftX: 0,
+            shiftY: 0
+        };
     
     const allBlocks = document.querySelectorAll('[id ^= "rec"]'),
         allUsedBlocks = [...allBlocks].filter(block => !block.querySelector('.t-popup') && block != triggerBlock && block != burgerBlock);
@@ -1828,9 +1838,6 @@ function pushingBurger_init(params) {
         triggerElems.closedTriggerColor = params.closedTriggerColor || 'black';
     }
     
-    let pushingShiftX = 0,
-        pushingShiftY = 0;
-    
     $(allUsedBlocks).wrapAll('<div class="pushingBurger_blocksWrapper"></div>');
     const blocksWrapper = document.querySelector('.pushingBurger_blocksWrapper');
     $(blocksWrapper).css('transition', `transform ${easeTime}s ${easeFunction}`);
@@ -1839,7 +1846,7 @@ function pushingBurger_init(params) {
         position: 'fixed',
         'z-index': '99',
         width: '100vw',
-        height: burgerHeight + 'px',
+        height: burgerDims.burgerHeight + 'px',
         transition: `transform ${easeTime}s ${easeFunction}`,
         'background-color': window.getComputedStyle(burgerBlock.querySelector('.t396__artboard')).backgroundColor
     });
@@ -1849,48 +1856,50 @@ function pushingBurger_init(params) {
         case 'top':
             $(burgerBlock).css({
                 width: '100vw',
-                top: `-${burgerHeight}px`,
+                top: `${-burgerDims.burgerHeight}px`,
                 left: '0',
             });
-            pushingShiftY = burgerHeight;
+            burgerDims.shiftY = burgerDims.burgerHeight;
             break;
         case 'bottom':
             $(burgerBlock).css({
                 width: '100vw',
-                bottom: `${-burgerHeight}px`,
+                bottom: `${-burgerDims.burgerHeight}px`,
                 left: '0',
             });
-            pushingShiftY = -burgerHeight;
+            burgerDims.shiftY = -burgerDims.burgerHeight;
             break;
         case 'left':
             $(burgerBlock).css({
-                width: burgerWidth + 'px',
+                width: burgerDims.burgerWidth + 'px',
                 height: '100vh',
                 top: '0',
-                left: `${-burgerWidth}px`,
+                left: `${-burgerDims.burgerWidth}px`,
             });
-            pushingShiftX = burgerWidth;
+            burgerDims.shiftX = burgerDims.burgerWidth;
             $('body').css('overflowX', 'hidden');
             break;
         case 'right':
             $(burgerBlock).css({
-                width: burgerWidth + 'px',
+                width: burgerDims.burgerWidth + 'px',
                 height: '100vh',
                 top: '0',
-                right: `${-burgerWidth}px`,
+                right: `${-burgerDims.burgerWidth}px`,
             });
-            pushingShiftX = -burgerWidth;
+            burgerDims.shiftX = -burgerDims.burgerWidth;
             $('body').css('overflowX', 'hidden');
             break;
         default:
             $(burgerBlock).css({
                 width: '100vw',
-                top: `-${burgerHeight}px`,
+                top: `${-burgerDims.burgerHeight}px`,
                 left: '0',
             });
-            pushingShiftY = burgerHeight;
+            burgerDims.shiftY = burgerDims.burgerHeight;
             break;
     }
+
+    console.log(burgerDims);
 
     // инициализация триггера
     setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleBurger, burgerBlock);
@@ -1901,15 +1910,58 @@ function pushingBurger_init(params) {
         $(addTriggers).css('cursor', 'pointer');
     }
 
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(handleResize, 100);
+    });
+
     function toggleBurger() {
         if ($(burgerBlock).attr('data-burgeropened') == 'false') {
-            $(blocksWrapper).css('transform', `translate(${pushingShiftX}px, ${pushingShiftY}px)`);
-            $(burgerBlock).css('transform', `translate(${pushingShiftX}px, ${pushingShiftY}px)`);
+            $(blocksWrapper).css('transform', `translate(${burgerDims.shiftX}px, ${burgerDims.shiftY}px)`);
+            $(burgerBlock).css('transform', `translate(${burgerDims.shiftX}px, ${burgerDims.shiftY}px)`);
             $(burgerBlock).attr('data-burgeropened', 'true');
         } else {
             $(blocksWrapper).css('transform', 'translate(0)');
             $(burgerBlock).css('transform', 'translate(0)');
             $(burgerBlock).attr('data-burgeropened', 'false');
+        }
+    }
+
+    function handleResize() {
+        burgerDims.burgerHeight = burgerVh ? +burgerVh*$(window).height()/100 : getElemParam(burgerArtboard, 'artboard-height');
+        burgerDims.burgerWidth = params.burgerWidth || $(window).width();
+        switch (burgerPosition) {
+            case 'top':
+                burgerDims.shiftY = burgerDims.burgerHeight;
+                $(burgerBlock).css({top: `${-burgerDims.burgerHeight}px`});
+                break;
+            case 'bottom':
+                burgerDims.shiftY = -burgerDims.burgerHeight;
+                $(burgerBlock).css({bottom: `${-burgerDims.burgerHeight}px`});
+                break;
+            case 'left':
+                burgerDims.shiftX = burgerDims.burgerWidth;
+                $(burgerBlock).css({
+                    width: `${burgerDims.burgerWidth}px`,
+                    left: `${-burgerDims.burgerWidth}px`,
+                });
+                break;
+            case 'right':
+                burgerDims.shiftX = -burgerDims.burgerWidth;
+                $(burgerBlock).css({
+                    width: `${burgerDims.burgerWidth}px`,
+                    right: `${-burgerDims.burgerWidth}px`,
+                });
+                break;
+            default:
+                burgerDims.shiftY = burgerDims.burgerHeight;
+                $(burgerBlock).css({top: `${-burgerDims.burgerHeight}px`});
+                break;
+        }
+        if ($(burgerBlock).attr('data-burgeropened') == 'true') {
+            $(blocksWrapper).css('transform', `translate(${burgerDims.shiftX}px, ${burgerDims.shiftY}px)`);
+            $(burgerBlock).css('transform', `translate(${burgerDims.shiftX}px, ${burgerDims.shiftY}px)`);
         }
     }
 }
@@ -2421,6 +2473,10 @@ function horDrag_init(params) {
         }
         horDragObj.style.overflow = 'visible';
         document.body.style.overflowX = 'hidden';
+        const allRecords = document.querySelector('#allrecords');
+        if (allRecords) {
+            allRecords.style.overflowX = 'hidden';
+        }
 
         const elements = horDragObj.querySelectorAll('.tn-elem'),
             lefts = [],
@@ -2717,7 +2773,6 @@ function moveAlongThePath_init (params) {
 
     if ($(window).width() > minWidth) {
         const currentBreakpoint = getCurrentBreakpoint();
-        const tildaBreakpoints = [1200, 980, 640, 480, 320];
         let path;
         for (let i = currentBreakpoint; i >= 0; i--) {
             const ind = tildaBreakpoints[i];
@@ -3078,7 +3133,6 @@ function textWrap_init(params) {
 
     if (typeof numLinesArr === 'object') {
         const currentBreakpoint = getCurrentBreakpoint();
-        const tildaBreakpoints = [1200, 980, 640, 480, 320];
         for (let i = currentBreakpoint; i >= 0; i--) {
             const ind = tildaBreakpoints[i];
             if (typeof numLinesArr[ind] == 'number') {
@@ -3230,6 +3284,27 @@ function joinElements(params) {
         );
     }
 }
+
+function poppingCards__std (params) {
+    poppingCards__init({
+        cardsSelector: '[class*="__content"]',
+        itemsSelectors: [
+            '[class*="__bgimg"]',
+            '[class*="__title"]',
+            '[class*="__price"]'
+        ],
+        zPositions: [
+            20,
+            50,
+            35
+        ],
+        isCustom: false,
+        coeff: params.coeff || 20,
+        animTime: params.animTime || 0.5,
+        easeFunction: 'ease'
+    });
+}
+
 
 // бегущая строка в кнопке
 function runningLineBtn_init (params) {
@@ -3448,26 +3523,6 @@ function poppingCards__init(params) {
     }
 }
 
-function poppingCards__std (params) {
-    poppingCards__init({
-        cardsSelector: '[class*="__content"]',
-        itemsSelectors: [
-            '[class*="__bgimg"]',
-            '[class*="__title"]',
-            '[class*="__price"]'
-        ],
-        zPositions: [
-            20,
-            50,
-            35
-        ],
-        isCustom: false,
-        coeff: params.coeff || 20,
-        animTime: params.animTime || 0.5,
-        easeFunction: 'ease'
-    });
-}
-
 
 // градиент вокруг курсора
 function cursorHalo_init(params) {
@@ -3541,3 +3596,363 @@ function simpleCursor_init(params) {
         );
     }
 }
+
+
+// переворачивающийся текст
+function flippingText_init(params) {
+    const selectors = params.selectors || '.flip-text';
+    let els = document.querySelectorAll(selectors);
+    if (!els.length) {
+        console.error('Неправильно заданы селекторы: ', selectors);
+        els = document.querySelectorAll('.flip-text');
+    }
+    if (!els.length) {
+        return console.error('A элементов с классом "flip-text" не нашлось :(');
+    }
+    const transitionTime = params.transitionTime || 0.4;
+    const transitionDelay = params.transitionDelay || 0.1;
+
+    els.forEach(el => {
+        const inner = el.firstElementChild;
+        const text = inner.textContent;
+        const innerStyles = window.getComputedStyle(inner);
+        const height = parseInt(innerStyles.lineHeight, 10);
+        const margin = height / 5;
+        const totalHeight = height + margin;
+
+        inner.innerHTML = `
+            <span style="display: block; margin-bottom: ${margin}px">${text}</span>
+            <span style="display: block;">${text}</span>
+        `;
+
+        $(inner).css({
+            height: totalHeight + 'px',
+            display: 'block',
+            overflow: 'hidden'
+        });
+
+        el.addEventListener('mouseenter', () => animate(inner));
+    });
+
+    function animate(text) {
+        const spans = text.querySelectorAll('span');
+        if (text.dataset.timeout === 'set') {
+            return;
+        }
+        text.dataset.timeout = 'set';
+        spans[0].style.transition = `transform ${transitionTime}s ease`;
+        spans[1].style.transition = `transform ${transitionTime}s ease ${transitionDelay}s`;
+        setTimeout(() => {
+            text.classList.add('text-flipped');
+        });
+        setTimeout(() => {
+            spans[0].style.transition = 'none';
+            spans[1].style.transition = 'none';
+            text.classList.remove('text-flipped');
+            text.dataset.timeout = 'unset';
+        }, (transitionTime + transitionDelay) * 1000);
+    }
+}
+
+// фоновое аудио
+function backAudio_init(params) {
+    const { link, volume, autoplay, loop, switchOption, waitForInteraction = true } = params;
+    let playLink = 'https://docs.google.com/uc?export=download&id=';
+    let togglerOn, togglerOff, hasTriggers = false, isOneTrigger = true, paused = true, softenTimeout;
+
+    try {
+        const audioId = link.split('d/')[1].split('/')[0];
+        playLink += audioId;
+    } catch(e) {
+        return console.error('Не получилось выделить ссылку на файл');
+    }
+
+    try {
+        togglerOn = document.querySelector('.audio-on');
+        togglerOn.addEventListener('click', toggleAudio);
+        hasTriggers = true;
+    } catch(e) {}
+    try {
+        togglerOff = document.querySelector('.audio-off');
+        togglerOff.addEventListener('click', toggleAudio);
+        isOneTrigger = false;
+        if (!togglerOn) {
+            togglerOn = togglerOff;
+            hasTriggers = true;
+            isOneTrigger = true;
+        }
+    } catch(e) {
+        if (!togglerOn && !autoplay) {
+            return console.error('Триггер не задан, а автовоспроизведение не включено - аудио не может быть включено!');
+        }
+    }
+    if (hasTriggers && !isOneTrigger) {
+        if (autoplay) {
+            togglerOn.classList.add('hidden');
+        } else {
+            togglerOff.classList.add('hidden');
+        }
+    }
+
+    const audioTag = `<audio class="fish-audio"><source src="${playLink}" type="audio/mpeg"></audio>`;
+    $('body').append(audioTag);
+    const audio = document.querySelector('.fish-audio');
+    audio.volume = volume || 1;
+    audio.loop = loop || false;
+    if (autoplay) {
+        paused = false;
+        audio.play().catch(() => {
+            if (waitForInteraction) {
+                document.addEventListener('click', getPermittedAutoplay);
+            }
+            toggleAudio();
+            paused = true;
+        });
+    }
+
+    function toggleAudio() {
+        paused = !paused;
+        softenVolume();
+        if (!isOneTrigger) {
+            toggleTriggers();
+        }
+    }
+    function getPermittedAutoplay(e) {
+        if (!togglerOn || e.target !== togglerOn.firstElementChild) {
+            toggleAudio();
+        }
+        document.removeEventListener('click', getPermittedAutoplay);
+    }
+    function toggleTriggers() {
+        if (paused) {
+            togglerOn.classList.remove('hidden');
+            togglerOff.classList.add('hidden');
+        } else {
+            togglerOn.classList.add('hidden');
+            togglerOff.classList.remove('hidden');
+        }
+    }
+    function isEqual(a, b) {
+        return Math.abs(a - b) < 0.001;
+    }
+    function softenVolume() {
+        audio.volume += paused ? -0.01 : 0.01;
+        if (audio.volume >= volume) {
+            audio.volume = volume;
+        } else if (audio.volume <= 0) {
+            audio.volume = 0;
+        }
+        if (switchOption === 'volume') {
+            if (!paused && audio.paused) {
+                audio.play().catch(() => {});
+            }
+        } else {
+            if (!paused) {
+                audio.play();
+            } else if (isEqual(audio.volume, 0)) {
+                audio.pause();
+            }
+        }
+        if (isEqual(audio.volume, volume) || isEqual(audio.volume, 0)) {
+            return;
+        }
+
+        softenTimeout = setTimeout(softenVolume, 50);
+    }
+}
+
+/* верхний и нижний блок шторкой */
+function bgBlock_init(params) {
+    const block = document.querySelector(params.selector);
+    const { type, translationCoeff = 0, filters } = params;
+
+    if (!block) {
+        return console.error('Неправильно задан селектор блока', params.selector);
+    }
+    if (type !== 'top' && type !== 'bottom') {
+        return console.error('Неправильно задан тип блока', type);
+    }
+
+    let offset = 0;
+    let resizeTimeout;
+    const allRecords = document.querySelector('#allrecords');
+    const blockParams = {
+        blockHeight: block.offsetHeight,
+        blockTop: block.offsetTop,
+        blockBottom: block.offsetHeight + block.offsetTop
+    };
+
+    allRecords.classList.add('has-bg-block');
+    block.classList.add('bg-block');
+    if (isTypeTop()) {
+        block.classList.add('fix-top');
+        allRecords.style.paddingTop = blockParams.blockHeight + 'px';
+    } else {
+        block.classList.add('fix-bottom');
+        allRecords.style.paddingBottom = blockParams.blockHeight + 'px';
+    }
+
+    if (filters.blur && filters.blur.coeff && filters.blur.gap) {
+        block.style.width = `calc(100% + ${2 * filters.blur.gap}px)`;
+        block.style.left = `-${filters.blur.gap}px`;
+    }
+
+    document.addEventListener('scroll', recalcOffset);
+    // TODO: add resize
+    // window.addEventListener('resize', () => {
+    //     clearTimeout(resizeTimeout);
+    //     resizeTimeout = window.setTimeout(handleResize, 250);
+    // });
+    recalcOffset();
+
+    function handleResize() {
+        blockParams.blockHeight = block.offsetHeight;
+        blockParams.blockTop = block.offsetTop;
+        blockParams.blockBottom = blockParams.blockHeight + blockParams.blockTop;
+        if (isTypeTop()) {
+            allRecords.style.paddingTop = blockParams.blockHeight + 'px';
+        } else {
+            allRecords.style.paddingBottom = blockParams.blockHeight + 'px';
+        }
+        recalcOffset();
+    }
+
+    function applyShadow() {
+        if (filters && filters.shadow && filters.shadow.coeff) {
+            const shadowOffset = offset * filters.shadow.coeff;
+            const shadowSpread = Math.sqrt(offset) * filters.shadow.coeff * filters.shadow.spreadCoeff;
+            if (isTypeTop()) {
+                block.nextElementSibling.style.boxShadow = `0px ${-1 * shadowOffset}px ${shadowSpread}px 0px ${filters.shadow.color}`;
+            } else {
+                block.previousElementSibling.style.boxShadow = `0px ${shadowOffset}px ${shadowSpread}px 0px ${filters.shadow.color}`;
+            }
+        }
+    }
+
+    function getFilter() {
+        let filter = '';
+        if (!filters) {
+            return filter;
+        }
+        if (filters.brightness && filters.brightness.coeff) {
+            const multiplier = Math.abs(filters.brightness.coeff);
+            if (filters.brightness.coeff > 0) {
+                filter += `brightness(${multiplier * offset + 1})`;
+            } else {
+                filter += `brightness(${1 / (multiplier * offset + 1)})`;
+            }
+        }
+        if (filters.blur && filters.blur.coeff) {
+            if (filter) {
+                filter += ' ';
+            }
+            filter += `blur(${filters.blur.coeff * offset}px)`;
+        }
+        return filter;
+    }
+
+    function applyFilters() {
+        const filter = getFilter();
+        if (filter) {
+            block.style.filter = filter;
+        }
+    }
+
+    function applyZoom() {
+        if (filters.zoom && filters.zoom.coeff) {
+            block.style.transform += ` scale(${1 + filters.zoom.coeff * offset})`;
+        }
+    }
+
+    function translate() {
+        const sign = isTypeTop() ? -1 : 1;
+        block.style.transform = `translateY(${sign * translationCoeff * offset * 100}%)`;
+    }
+
+    function applyEffects() {
+        applyFilters();
+        applyShadow();
+        applyZoom();
+    }
+
+    function recalcOffset() {
+        const st = $(window).scrollTop();
+        const wh = $(window).height();
+        if (isTypeTop()) {
+            offset = Math.abs(blockParams.blockTop - st) / wh;
+        } else {
+            offset = Math.abs(blockParams.blockBottom - st - wh) / wh;
+        }
+        translate();
+        window.requestAnimationFrame(applyEffects);
+    }
+
+    function isTypeTop() {
+        return type === 'top';
+    }
+}
+
+
+// МАСКА ВЕКТОРНЫМ ЧЕМ-НИБУДЬ
+function clipBySvg_init(params) {
+    const possibleSvgElements = 'path, circle, rect, text, line';
+    const { maskSelector, videoSelector } = params;
+    const videoElement = document.querySelector(videoSelector);
+    if (!videoElement) {
+        return console.error('Неправильно задан селектор элемента с видео: ' + videoSelector);
+    }
+    const maskElement = document.querySelector(maskSelector);
+    if (!maskElement) {
+        return console.error('Неправильно задан селектор элемента с маской: ' + maskSelector);
+    }
+    const maskSvg = maskElement.querySelector('svg');
+    if (!maskSvg) {
+        return console.error('Неправильно задан код SVG');
+    }
+    $(maskSvg).html(`<defs><clipPath id="fish-video-clip">${$(maskSvg).html()}</clipPath></defs>`);
+    const svgElements = maskSvg.querySelectorAll(possibleSvgElements);
+    const scales = preformScales();
+    let resizeTimeout = null;
+
+    replaceElements();
+
+    $(videoElement).css({
+        'clip-path': 'url(#fish-video-clip)'
+    });
+
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(replaceElements, 1000);
+    });
+
+    function preformScales() {
+        const queries = [
+            `data-field-width-value`,
+            `data-field-width-res-960-value`,
+            `data-field-width-res-640-value`,
+            `data-field-width-res-480-value`,
+            `data-field-width-res-320-value`
+        ];
+        const widths = queries.map(q => Number(maskElement.getAttribute(q)));
+        const scales = widths.map(w => {
+            if (w) {
+                return w / widths[0];
+            }
+            return null;
+        });
+        scales.forEach((scale, i) => {
+            if (scale === null) {
+                scale = scales[i - 1];
+            }
+        });
+        return scales;
+    }
+
+    function replaceElements() {
+        const maskRect = maskElement.getBoundingClientRect();
+        const scale = scales[getCurrentBreakpoint()];
+        svgElements.forEach(el => {
+            el.style.transform = `translate(${maskRect.left}px, ${maskRect.top}px) scale(${scale})`;
+        });
+    }
+};
