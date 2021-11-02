@@ -1899,8 +1899,6 @@ function pushingBurger_init(params) {
             break;
     }
 
-    console.log(burgerDims);
-
     // инициализация триггера
     setBurgerTrigger(isTriggerCustom, triggerBlock, triggerElems, toggleBurger, burgerBlock);
 
@@ -1934,11 +1932,17 @@ function pushingBurger_init(params) {
         switch (burgerPosition) {
             case 'top':
                 burgerDims.shiftY = burgerDims.burgerHeight;
-                $(burgerBlock).css({top: `${-burgerDims.burgerHeight}px`});
+                $(burgerBlock).css({
+                    top: `${-burgerDims.burgerHeight}px`,
+                    height: `${burgerDims.burgerHeight}px`
+                });
                 break;
             case 'bottom':
                 burgerDims.shiftY = -burgerDims.burgerHeight;
-                $(burgerBlock).css({bottom: `${-burgerDims.burgerHeight}px`});
+                $(burgerBlock).css({
+                    bottom: `${-burgerDims.burgerHeight}px`,
+                    height: `${burgerDims.burgerHeight}px`
+                });
                 break;
             case 'left':
                 burgerDims.shiftX = burgerDims.burgerWidth;
