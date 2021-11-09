@@ -674,9 +674,8 @@ function buttonToCircle_init(params) {
 
     if ($(window).width() > minWidth) {
         const widthShift = buttonStyle.height;
-        $(buttonToCircle).prepend(`<div class='moving_bg'></div>`);
-        const movingBg = $('.moving_bg');
-        $(buttonTextHolder).html(`<p class='buttonToCircleTxt'>${$(buttonTextHolder).text()}</p>`);
+        const movingBg = $(buttonToCircle).prepend(`<div class='moving_bg'></div>`).children('.moving_bg');
+        const buttonToCircleTxt = $(buttonTextHolder).html(`<p class='buttonToCircleTxt'>${$(buttonTextHolder).text()}</p>`).children('.buttonToCircleTxt');
 
         $(buttonTextHolder).css({
             'position': 'relative',
@@ -700,7 +699,7 @@ function buttonToCircle_init(params) {
             'transition': '0.7s cubic-bezier(0.9, 0, 0.1, 1)',
             'right': '0'
         });
-        $('.buttonToCircleTxt').css({
+        $(buttonToCircleTxt).css({
             'position': 'relative',
             'transition': 'left 0.7s cubic-bezier(0.9, 0, 0.1, 1)',
             'left': '0'
@@ -709,12 +708,12 @@ function buttonToCircle_init(params) {
         $(buttonToCircle).hover(function() {
             $(movingBg).css('width', widthShift);
             $(buttonTextHolder).css('color', buttonStyle.bgColor);
-            $('.buttonToCircleTxt').css('left', `-${widthShift/3}px`);
+            $(buttonToCircleTxt).css('left', `-${widthShift/3}px`);
         },
         function() {
             $(movingBg).css('width', buttonStyle.width);
             $(buttonTextHolder).css('color', 'white');
-            $('.buttonToCircleTxt').css('left', `0`);
+            $(buttonToCircleTxt).css('left', `0`);
         });
     }
 }
