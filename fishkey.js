@@ -1,4 +1,5 @@
 const tildaBreakpoints = [1200, 980, 640, 480, 320];
+let globalCounter = 0;
 
 /* утилита для определения браузера */
 /* Названия браузеров: chrome, firefox, safari, explorer, edge, opera, samsung */
@@ -3959,3 +3960,188 @@ function clipBySvg_init(params) {
         });
     }
 };
+
+
+// движение текста по пути
+function textAlongThePath_init(params) {
+    const reference = document.querySelector(params.reference);
+    if (!reference) {
+        return console.error('Неправильно задан селектор элемента с текстом');
+    }
+    const renderTo = document.querySelector(params.renderTo);
+    if (!renderTo) {
+        return console.error('Неправильно задан селектор элемента для svg');
+    }
+    if (!params.svg) {
+        return console.error('Не задан svg');
+    }
+    const moveLeft = params.direction === 'left';
+    const separate = params.separate || false;
+    const speedCoeff = params.speedCoeff || 1;
+    const minWidth = isNaN(params.minWidth) ? 0 : params.minWidth;
+    const maxWidth = isNaN(params.maxWidth) ? 999999 : params.maxWidth;
+
+    const textStyleProperties = ['fontSize', 'fontFamily', 'fontWeight', 'textDecoration', 'fontStyle'];
+    let screenWidth = $(window).width();
+    let resizeTimeout = null;
+
+    const text = separate ? reference.textContent + ' ' : reference.textContent;
+    const styles = getComputedStyle(reference.firstElementChild);
+    const targetWidth = renderTo.getBoundingClientRect().width;
+    $(renderTo).html(params.svg);
+    const svgElem = renderTo.querySelector('svg');
+    svgElem.setAttribute('width', targetWidth);
+    svgElem.removeAttribute('height');
+    svgElem.style.overflow = 'visible';
+    const pathElement = svgElem.querySelector('path');
+    let pathId = 'fishkey-curve';
+    try {
+        pathId += `-${globalCounter}`;
+        globalCounter++;
+    } catch (e) {
+        pathId += `-${Math.floor((new Date()) / 1000)}`;
+    }
+    pathElement.setAttribute('id', pathId);
+    pathElement.style.stroke = 'transparent';
+    pathElement.style.fill = 'transparent';
+
+    const textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    svgElem.appendChild(textElem);
+
+    textElem.style.fill = styles.color;
+    textStyleProperties.forEach(property => {
+        if (styles[property]) {
+            textElem.style[property] = styles[property];
+        }
+    });
+    reference.remove();
+
+    const textpath = document.createElementNS("http://www.w3.org/2000/svg", "textPath");
+    textpath.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#" + pathId);
+    textpath.textContent = text;
+
+    textElem.appendChild(textpath);
+    const pathLength = pathElement.getTotalLength();
+    let oneWordLength = textpath.getComputedTextLength();
+    if (separate) {
+        textpath.textContent += text;
+        const spaceLength = textpath.getComputedTextLength() - 2 * oneWordLength;
+        oneWordLength += spaceLength;
+    }
+
+    for(let i = 0; i < pathLength / oneWordLength + 2; i++) {
+        textpath.textContent += text;
+    }
+
+    if (screenWidth > minWidth && screenWidth < maxWidth) {
+        renderTo.style.display = 'initial';
+    } else {
+        renderTo.style.display = 'none';
+    }
+
+    const startPos = Math.floor(oneWordLength);
+    let currentOffset = moveLeft ? 0 : -startPos;
+
+    window.addEventListener('resize', handleResize);
+
+    const moveText = moveLeft
+        ? () => {
+            currentOffset -= speedCoeff;
+            if (currentOffset < -startPos) {
+                currentOffset = 0;
+            }
+            textpath.setAttribute('startOffset', currentOffset);
+            requestAnimationFrame(moveText);
+        }
+        : () => {
+            currentOffset += speedCoeff;
+            if (currentOffset > 0) {
+                currentOffset = -startPos;
+            }
+            textpath.setAttribute('startOffset', currentOffset);
+            requestAnimationFrame(moveText);
+        };
+
+    moveText();
+
+    function handleResize() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const targetWidth = renderTo.style.width;
+            svgElem.setAttribute('width', targetWidth);
+            screenWidth = $(window).width();
+            if (screenWidth > minWidth && screenWidth < maxWidth) {
+                renderTo.style.display = 'initial';
+            } else {
+                renderTo.style.display = 'none';
+            }
+        }, 800);
+    }
+}
+
+
+// параллакс фото по скроллу
+function photoScroll_init(params) {
+    const photoElems = document.querySelectorAll(params.selectors);
+    if (!photoElems.length) {
+        return console.error('Неправильно заданы селекторы элементов');
+    }
+    const photos = [...photoElems].map(elem => elem.firstElementChild);
+    const maxShift = params.maxShift || 30;
+    const direction = params.direction || 'to bottom';
+
+    const screenParams = {
+        top: $(window).scrollTop(),
+        height: $(window).height(),
+        bottom: null
+    };
+    screenParams.bottom = screenParams.top + screenParams.height;
+
+    photos.forEach(photo => {
+        photo.style.backgroundSize = `${100 + maxShift * 2}%`;
+    });
+
+    const shiftBgs = direction === 'to top'
+        ? () => photos.forEach(shiftToTop)
+        : () => photos.forEach(shiftToBottom);
+
+    window.addEventListener('resize', recalcScreenParams);
+    document.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    function recalcScreenParams() {
+        screenParams.top = $(window).scrollTop();
+        screenParams.height = $(window).height()
+        screenParams.bottom = screenParams.top + screenParams.height;
+    }
+
+    function handleScroll() {
+        screenParams.top = $(window).scrollTop();
+        screenParams.bottom = screenParams.top + screenParams.height;
+        shiftBgs();
+    }
+
+    function shiftToBottom(photo) {
+        const { top, height } = photo.getBoundingClientRect();
+        if (top > screenParams.height) {
+            photo.style.backgroundPositionY = 2 * maxShift + '%';
+        } else if (top < -height) {
+            photo.style.backgroundPositionY = 0;
+        } else {
+            const progress = 2 * (top + height) / (screenParams.height + height);
+            photo.style.backgroundPositionY = `${progress * maxShift}%`;
+        }
+    }
+
+    function shiftToTop(photo) {
+        const { top, height } = photo.getBoundingClientRect();
+        if (top > screenParams.height) {
+            photo.style.backgroundPositionY = 0;
+        } else if (top < -height) {
+            photo.style.backgroundPositionY = 2 * maxShift + '%';
+        } else {
+            const progress = 2 * (top - height) / (screenParams.height + height);
+            photo.style.backgroundPositionY = `${(1 - progress) * maxShift}%`;
+        }
+    }
+}
