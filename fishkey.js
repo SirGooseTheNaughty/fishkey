@@ -1325,29 +1325,32 @@ function lettersAppear_init(parameters) {
     const delay = parameters.delay || 0;
     const isRandom = parameters.isRandom || false;
     let offset = parameters.offset || 0;
-    const textElem = document.querySelector(`${parameters.selector} .tn-atom`),
-        text = textElem.innerText.split(''),
-        numLetters = text.length;
+    const textElem = document.querySelector(`${parameters.selector} .tn-atom`);
     isNaN(offset) ? offset = 0 : offset = $(window).height()*offset/100;
 
+    const texts = [];
+    textElem.childNodes.forEach(node => {
+        const tag = node.nodeName === '#text' ? 'span' : node.nodeName;
+        node.textContent.split('').forEach(letter => {
+            texts.push({
+                letter,
+                tag: tag
+            });
+        });
+    });
+    const numLetters = texts.length;
+
     const maxDelay = totalSpeed - letterSpeed;
-    let tag = 'span';
-    if (textElem.querySelector('em')) {
-        tag = 'em';
-    }
 
     if ($(window).width() > minWidth) {
         textElem.innerHTML = '';
 
-        if (isRandom) {
-            text.forEach(letter => {
-                $(textElem).append(`<${tag} style="opacity: 0; transition: opacity ${letterSpeed}s ease ${maxDelay*Math.random()}s">${letter}</${tag}>`);
-            });
-        } else {
-            text.forEach((letter, i) => {
-                $(textElem).append(`<${tag} style="opacity: 0; transition: opacity ${letterSpeed}s ease ${maxDelay*(i/numLetters)}s">${letter}</${tag}>`);
-            });
-        }
+        texts.forEach(text => {
+            const { letter, tag } = text;
+            $(textElem).append(
+                `<${tag} style="opacity: 0; transition: opacity ${letterSpeed}s ease ${isRandom ? maxDelay*Math.random() : maxDelay*(i/numLetters)}s">${letter}</${tag}>`
+            );
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('scroll', appearOnScroll);
@@ -1356,7 +1359,7 @@ function lettersAppear_init(parameters) {
     }
 
     function lettersAppear() {
-        $(textElem).children(tag).css('opacity', '1');
+        $(textElem).children().css('opacity', '1');
     }
     function appearOnScroll() {
         if ($(textElem).offset().top < $(window).scrollTop() + $(window).height() - offset ) {
