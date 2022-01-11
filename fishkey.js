@@ -1331,9 +1331,11 @@ function lettersAppear_init(parameters) {
     const texts = [];
     textElem.childNodes.forEach(node => {
         const tag = node.nodeName === '#text' ? 'span' : node.nodeName;
+        const fontWeight = node.nodeName !== '#text' ? getComputedStyle(node).fontWeight || '400' : '400';
         node.textContent.split('').forEach(letter => {
             texts.push({
                 letter,
+                fontWeight,
                 tag: tag
             });
         });
@@ -1345,12 +1347,17 @@ function lettersAppear_init(parameters) {
     if ($(window).width() > minWidth) {
         textElem.innerHTML = '';
 
-        texts.forEach(text => {
-            const { letter, tag } = text;
-            $(textElem).append(
-                `<${tag} style="opacity: 0; transition: opacity ${letterSpeed}s ease ${isRandom ? maxDelay*Math.random() : maxDelay*(i/numLetters)}s">${letter}</${tag}>`
-            );
-        });
+        if (isRandom) {
+            texts.forEach(text => {
+                const { letter, fontWeight, tag } = text;
+                $(textElem).append(`<${tag} style="opacity: 0; transition: opacity ${letterSpeed}s ease ${maxDelay*Math.random()}s; font-weight: ${fontWeight}">${letter}</${tag}>`);
+            });
+        } else {
+            texts.forEach((text, i) => {
+                const { letter, fontWeight, tag } = text;
+                $(textElem).append(`<${tag} style="opacity: 0; transition: opacity ${letterSpeed}s ease ${maxDelay*(i/numLetters)}s;  font-weight: ${fontWeight}">${letter}</${tag}>`);
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('scroll', appearOnScroll);
