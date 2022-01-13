@@ -1327,11 +1327,12 @@ function lettersAppear_init(parameters) {
     let offset = parameters.offset || 0;
     const textElem = document.querySelector(`${parameters.selector} .tn-atom`);
     isNaN(offset) ? offset = 0 : offset = $(window).height()*offset/100;
+    const defaultFontWeight = getComputedStyle(textElem).fontWeight || '400';
 
     const texts = [];
     textElem.childNodes.forEach(node => {
         const tag = node.nodeName === '#text' ? 'span' : node.nodeName;
-        const fontWeight = node.nodeName !== '#text' ? getComputedStyle(node).fontWeight || '400' : '400';
+        const fontWeight = node.nodeName !== '#text' ? getComputedStyle(node).fontWeight || defaultFontWeight : defaultFontWeight;
         node.textContent.split('').forEach(letter => {
             texts.push({
                 letter,
