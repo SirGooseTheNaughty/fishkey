@@ -268,3 +268,56 @@ body:not(.t-body_popupshowed) .ddd-cards-body {
 .bg-block.fix-bottom {
     bottom: 0;
 }
+
+/* прячущийся хедер */
+.hiding-header {
+    --animTime: .25s;
+    --top: 0;
+    position: fixed;
+    top: var(--top);
+    width: 100%;
+    top: 0;
+    z-index: 99999;
+    transform: translateY(0);
+    transition: transform .4s ease;
+}
+.hiding-header-lose {
+    position: absolute;
+    top: var(--top);
+}
+.hiding-header-anim {
+    transition: var(--animTime);
+}
+.hiding-header-lose.make-transparent .t396__artboard {
+    background-color: transparent !important;
+}
+.hiding-header.hidden {
+    transform: translateY(-100%);
+}
+.hiding-header.hiding-header-lose .fixed-element {
+    opacity: 0;
+}
+.hiding-header:not(.hiding-header-lose) .lose-element {
+    opacity: 0;
+}
+
+
+/* темная тема */
+.dark-mode,
+.light-mode,
+.dark-trigger,
+.light-trigger {
+    transition: opacity var(--transitionTime, 0);
+}
+.dark-trigger,
+.light-trigger,
+.common-trigger {
+    cursor: pointer;
+}
+body.light-mode .dark-mode,
+body.dark-mode .light-mode,
+body.light-mode .dark-trigger,
+body.dark-mode .light-trigger {
+    opacity: 0;
+    pointer-events: none;
+}

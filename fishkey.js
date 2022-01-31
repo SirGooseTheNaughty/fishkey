@@ -847,11 +847,48 @@ function horScrollBlock_init(parameters) {
         hasDelay = parameters.hasDelay || false,
         delaySpeed = parameters.delaySpeed || 1;
 
+    let inited = false;
+    let currentShift;
     let headerTop = 0,
         headerHeight = 0,
         horScrollContainer = {};
+    let resizeTimeout = null;
     
     if ($(window).width() > minWidth) {
+        init();
+    }
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if ($(window).width() > minWidth) {
+                if (!inited) {
+                    init();
+                } else {
+                    setCurrentShift();
+                }
+            } else {
+                location.reload();
+            }
+        }, 250);
+    });
+
+    function setCurrentShift() {
+        if (typeof totalShift !== 'number') {
+            const currentBreakpoint = getCurrentBreakpoint();
+            for (let i = currentBreakpoint; i >= 0; i--) {
+                const ind = tildaBreakpoints[i];
+                if (totalShift[ind]) {
+                    currentShift = totalShift[ind];
+                    break;
+                }
+            }
+        } else {
+            currentShift = totalShift;
+        }
+    }
+
+    function init() {
+        setCurrentShift();
         const children = $(horScrollBlock.querySelector('.t396__artboard')).children();
 
         $(children).wrapAll('<div class="horScrollContainer"></div>');
@@ -871,7 +908,7 @@ function horScrollBlock_init(parameters) {
         $(horScrollContainer).css({top: '0', left: '0',});
         header ? $(header).css({top: '0', left: '0', width: '100vw', 'z-index': '100'}) : false;
         $(horScrollBlock).css({
-            height: totalShift + blockHeight + 'px',
+            height: currentShift + blockHeight + 'px',
             backgroundColor: window.getComputedStyle(horScrollBlock.querySelector('.t396__artboard')).backgroundColor,
             overflow: 'hidden'
         });
@@ -886,6 +923,7 @@ function horScrollBlock_init(parameters) {
                 horScrollBlock_handler();
             });
         }
+        inited = true;
     }
 
     function horScrollBlock_handler() {
@@ -897,7 +935,7 @@ function horScrollBlock_init(parameters) {
                 transform: 'translate(0)'
             });
             header ? $(header).css({'position': 'relative'}) : false;
-        } else if (horScrollShift < totalShift) {
+        } else if (horScrollShift < currentShift) {
             $(horScrollContainer).css({
                 'position': 'fixed',
                 transform: `translate(-${horScrollShift}px, ${headerHeight}px)`
@@ -908,9 +946,9 @@ function horScrollBlock_init(parameters) {
             $(horScrollContainer).css({
                 'position': 'relative',
                 'padding-bottom': '0',
-                transform: `translate(-${totalShift}px, ${totalShift}px)`
+                transform: `translate(-${currentShift}px, ${currentShift}px)`
             });
-            header ? $(header).css({position: 'relative', transform: `translate(0, ${totalShift}px)`}) : false;
+            header ? $(header).css({position: 'relative', transform: `translate(0, ${currentShift}px)`}) : false;
             horScrollBlock.style.paddingBottom = '0';
         }
     }
@@ -926,7 +964,7 @@ function horScrollBlock_init(parameters) {
             horScrollContainer.setAttribute('data-target-y', 0);
             horScrollContainer.setAttribute('data-current-y', 0);
             header ? $(header).css({'position': 'relative'}) : false;
-        } else if (horScrollShift < totalShift) {
+        } else if (horScrollShift < currentShift) {
             $(horScrollContainer).css({
                 'position': 'fixed'
             });
@@ -941,11 +979,11 @@ function horScrollBlock_init(parameters) {
                 'position': 'relative',
                 'padding-bottom': '0'
             });
-            horScrollContainer.setAttribute('data-target-x', -totalShift);
-            horScrollContainer.setAttribute('data-target-y', totalShift);
-            horScrollContainer.setAttribute('data-current-y', totalShift);
+            horScrollContainer.setAttribute('data-target-x', -currentShift);
+            horScrollContainer.setAttribute('data-target-y', currentShift);
+            horScrollContainer.setAttribute('data-current-y', currentShift);
 
-            header ? $(header).css({position: 'relative', transform: `translate(0, ${totalShift}px)`}) : false;
+            header ? $(header).css({position: 'relative', transform: `translate(0, ${currentShift}px)`}) : false;
             horScrollBlock.style.paddingBottom = '0';
         }
     }
@@ -1748,25 +1786,24 @@ function uniBurger_init(params) {
         }
     }
 
-    (function burgerInit() {
-        const burgerBGColor = $(burgerBlock).children('div').children('div').css('background-color');
-        $(burgerBlock).children('div').children('div').css('background-color', 'none');
-        burgerBlock.classList.add('burgerBlock', 'burgerHidden');
-        
-        burgerReshape();
+    const burgerBGColor = $(burgerBlock).children('div').children('div').css('background-color');
+    $(burgerBlock).children('div').children('div').css('background-color', 'none');
+    burgerBlock.classList.add('burgerBlock', 'burgerHidden');
+    
+    burgerReshape();
 
-        $(burgerWrapper).css({
-            'background-color': burgerBGColor,
-            'width': '0',
-            'height': '0',
-            'transition': `${burgerTransTime}s ease`,
-            'z-index': '9998'
-        });
-    })();
-
+    $(burgerWrapper).css({
+        'background-color': burgerBGColor,
+        'width': '0',
+        'height': '0',
+        'z-index': '9998'
+    });
     $(burgerWrapper).css(hiddenStyle);
 
-    $(burgerBlock).css('transition', `opacity ${burgerElemsTransTime}s ease`);
+    setTimeout(() => {
+        burgerWrapper.style.transition = `${burgerTransTime}s ease`;
+        burgerBlock.style.transition = `opacity ${burgerElemsTransTime}s ease`;
+    });
 
     function toggleBurger() {
         if (burgerTimeout) {
@@ -4154,5 +4191,183 @@ function photoScroll_init(params) {
             const progress = 2 * (top - height) / (screenParams.height + height);
             photo.style.backgroundPositionY = `${(1 - progress) * maxShift}%`;
         }
+    }
+}
+
+
+// прячущийся хедер
+function hidingHeader_init(params) {
+    const header = document.querySelector(params.selector);
+    if (!header) {
+        return console.error('Неправильно задан селектор хедера');
+    }
+    const top = params.top || 0;
+    const animTime = params.animTime || 0.25;
+    const delay = params.delay ? params.delay * 1000 : 2000;
+    let timeout = null;
+
+    header.classList.add('hiding-header');
+    header.style = `--animTime: ${animTime}s; --top: ${top}px`;
+    if (params.makeTransparent) {
+        header.classList.add('make-transparent');
+    }
+    if (params.showOnMouseUp) {
+        document.body.addEventListener('mouseleave', showOnMouseUp);
+    }
+    if (!isMobile()) {
+        header.addEventListener('mouseenter', () => clearTimeout(timeout));
+        header.addEventListener('mouseleave', () => timeout = setTimeout(hideHeader, delay));
+    }
+    if (!(params.disableHidingOnMobile && isMobile())) {
+        window.addEventListener('scroll', handleScroll);
+    }
+
+    window.addEventListener('scroll', toggleSticking);
+    toggleSticking();
+    setTimeout(() => {
+        if (params.makeTransparent) {
+            const changingEls = header.querySelectorAll('.t396__artboard, .lose-element, .fixed-element');
+            [...changingEls].forEach(el => el.classList.add('hiding-header-anim'));
+        }
+    });
+
+    function showOnMouseUp(e) {
+        if (e.clientY < 0) {
+            handleScroll();
+        }
+    }
+
+    function toggleSticking() {
+        if ($(window).scrollTop() > top) {
+            header.classList.remove('hiding-header-lose');
+        } else {
+            header.classList.add('hiding-header-lose');
+        }
+    }
+
+    function handleScroll() {
+        if (header.classList.contains('hiding-header-lose')) {
+            return;
+        }
+        header.classList.remove('hidden');
+        clearTimeout(timeout);
+        timeout = setTimeout(hideHeader, delay);
+    }
+
+    function hideHeader() {
+        if (header.classList.contains('hiding-header-lose')) {
+            return;
+        }
+        header.classList.add('hidden');
+    }
+}
+
+
+// темная тема
+function darkMode_init(params) {
+    const { type = 'negative', scheme = null, transitionTime = 0 } = params;
+    let isLightMode = params.initialMode !== 'dark';
+
+    useClasses();
+
+    let toggleFunction;
+
+    if (type === 'negative') {
+        document.body.style.backgroundColor = 'white';
+        document.body.style.mixBlendMode = 'initial';
+        toggleFunction = () => {
+            isLightMode = !isLightMode;
+            useClasses();
+            useNegativeMode();
+        }
+    } else if (type === 'auto') {
+        document.body.style = `--transitionTime: ${transitionTime}s`;
+        if (!Array.isArray(scheme)) {
+            return console.error('Неправильно заданы цвета в параметре scheme');
+        }
+        toggleFunction = () => {
+            isLightMode = !isLightMode;
+            useClasses();
+            useColors();
+        }
+    } else {
+        toggleFunction = () => {
+            isLightMode = !isLightMode;
+            useClasses();
+        }
+    }
+
+    const triggers = {
+        light: document.querySelector('.light-trigger'),
+        dark: document.querySelector('.dark-trigger'),
+        common: document.querySelector('.common-trigger'),
+    };
+
+    if (triggers.light && triggers.dark) {
+        triggers.light.addEventListener('click', toggleFunction);
+        triggers.dark.addEventListener('click', toggleFunction);
+    } else if (triggers.common) {
+        triggers.common.addEventListener('click', toggleFunction);
+    } else {
+        return console.error('Не найдены триггеры');
+    }
+
+    function useNegativeMode() {
+        document.body.style.mixBlendMode = isLightMode ? 'initial' : 'difference';
+    }
+
+    function useClasses() {
+        if (isLightMode) {
+            document.body.classList.remove('dark-mode');
+            document.body.classList.add('light-mode');
+        } else {
+            document.body.classList.remove('light-mode');
+            document.body.classList.add('dark-mode');
+        }
+    }
+
+    function useColors() {
+        let newMode = 'light', currentMode = 'dark';
+        if (!isLightMode) {
+            newMode = 'dark';
+            currentMode = 'light';
+        }
+        const allEls = document.body.querySelectorAll('*:not(style, script)');
+        allEls.forEach(el => {
+            const { color, backgroundColor, borderColor } = getComputedStyle(el);
+            if (color) {
+                changeColor(el, color, 'color', newMode, currentMode);
+            }
+            if (backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                changeColor(el, backgroundColor, 'backgroundColor', newMode, currentMode);
+            }
+            if (borderColor && borderColor !== 'rgba(0, 0, 0, 0)') {
+                changeColor(el, borderColor, 'borderColor', newMode, currentMode);
+            }
+        });
+    }
+
+    function changeColor(el, color, attr, newMode, currentMode) {
+        const hexColor = RGBToHex(color);
+        const colorData = scheme.find(sc => sc.type === attr && sc[currentMode].toLowerCase() === hexColor);
+        if (colorData) {
+            el.style.transition = `${transitionTime}s`;
+            setTimeout(() => el.style[attr] = colorData[newMode]);
+        }
+    }
+
+    function RGBToHex(rgb) {
+        let sep = rgb.indexOf(",") > -1 ? "," : " ";
+        rgb = rgb.substr(4).split(")")[0].split(sep);
+        let r = (+rgb[0]).toString(16),
+            g = (+rgb[1]).toString(16),
+            b = (+rgb[2]).toString(16);
+        if (r.length == 1)
+          r = "0" + r;
+        if (g.length == 1)
+          g = "0" + g;
+        if (b.length == 1)
+          b = "0" + b;
+        return "#" + r + g + b;
     }
 }
