@@ -866,7 +866,7 @@ function horScrollBlock_init(parameters) {
                 } else {
                     setCurrentShift();
                 }
-            } else {
+            } else if (inited) {
                 location.reload();
             }
         }, 250);
