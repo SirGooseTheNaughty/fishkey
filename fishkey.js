@@ -849,8 +849,6 @@ function horScrollBlock_init(parameters) {
 
     let inited = false;
     let currentShift;
-    let headerTop = 0,
-        headerHeight = 0,
         horScrollContainer = {};
     let resizeTimeout = null;
     
@@ -894,13 +892,6 @@ function horScrollBlock_init(parameters) {
         $(children).wrapAll('<div class="horScrollContainer"></div>');
         horScrollContainer = document.querySelector('.horScrollContainer');
 
-        if (header) {
-            headerTop = $(header).offset().top;
-            headerHeight = $(header).height();
-        } else {
-            headerTop = $(horScrollContainer).offset().top;
-        }
-
         if (hasDelay) {
             initCoordTracking(horScrollContainer, 'scroll', 'rel', true, true, {delaySpeed, framerate: 15});
         }
@@ -927,6 +918,8 @@ function horScrollBlock_init(parameters) {
     }
 
     function horScrollBlock_handler() {
+        const headerTop = header ? $(header).offset().top : $(horScrollContainer).offset().top;
+        const headerHeight = header ? $(header).height() : 0;
         const wt = $(window).scrollTop(),
             horScrollShift = +wt - headerTop;
         if (wt < headerTop) {
@@ -954,6 +947,8 @@ function horScrollBlock_init(parameters) {
     }
 
     function horScrollBlockDelay_handler() {
+        const headerTop = header ? $(header).offset().top : $(horScrollContainer).offset().top;
+        const headerHeight = header ? $(header).height() : 0;
         const wt = $(window).scrollTop(),
             horScrollShift = +wt - headerTop;
         if (wt < headerTop) {
