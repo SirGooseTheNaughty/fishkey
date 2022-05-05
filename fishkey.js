@@ -4033,6 +4033,7 @@ function textAlongThePath_init(params) {
     const speedCoeff = params.speedCoeff || 1;
     const minWidth = isNaN(params.minWidth) ? 0 : params.minWidth;
     const maxWidth = isNaN(params.maxWidth) ? 999999 : params.maxWidth;
+    const showLine = params.showLine || false;
 
     const textStyleProperties = ['fontSize', 'fontFamily', 'fontWeight', 'textDecoration', 'fontStyle'];
     let screenWidth = $(window).width();
@@ -4055,8 +4056,10 @@ function textAlongThePath_init(params) {
         pathId += `-${Math.floor((new Date()) / 1000)}`;
     }
     pathElement.setAttribute('id', pathId);
-    pathElement.style.stroke = 'transparent';
-    pathElement.style.fill = 'transparent';
+    if (!showLine) {
+        pathElement.style.stroke = 'transparent';
+        pathElement.style.fill = 'transparent';
+    }
 
     const textElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
     svgElem.appendChild(textElem);
@@ -4067,6 +4070,9 @@ function textAlongThePath_init(params) {
             textElem.style[property] = styles[property];
         }
     });
+    if (showLine) {
+        textElem.style.transform = `translateY(${parseInt(styles.fontSize) / 2})px`;
+    }
     reference.remove();
 
     const textpath = document.createElementNS("http://www.w3.org/2000/svg", "textPath");
