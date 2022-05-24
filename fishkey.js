@@ -891,8 +891,9 @@ function horScrollBlock_init(parameters) {
         setCurrentShift();
         const children = $(horScrollBlock.querySelector('.t396__artboard')).children();
 
-        $(children).wrapAll('<div class="horScrollContainer"></div>');
-        horScrollContainer = document.querySelector('.horScrollContainer');
+        $(children).wrapAll(`<div class="horScrollContainer-${globalCounter}"></div>`);
+        horScrollContainer = document.querySelector(`.horScrollContainer-${globalCounter}`);
+        globalCounter++;
 
         if (header) {
             headerTop = $(header).offset().top;
@@ -1007,8 +1008,8 @@ function horScroll_init(params) {
     let horScrollStaticContainer;
 
     if ($(window).width() > horScrollMinWidth) {
-        $(horScrollBlocks).wrapAll('<div class="horScrollContainer"></div>');
-        horScrollContainer = document.querySelector('.horScrollContainer');
+        $(horScrollBlocks).wrapAll(`<div class="horScrollContainer-${globalCounter}"></div>`);
+        horScrollContainer = document.querySelector(`.horScrollContainer-${globalCounter}`);
         if (hasDelay) {
             initCoordTracking(horScrollContainer, 'scroll', 'rel', true, true, {framerate: 15, delaySpeed});
         }
