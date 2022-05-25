@@ -3176,9 +3176,13 @@ function preloader_init(params) {
 // обрезка текста
 function textWrap_init(params) {
     const textBlock = document.querySelector(params.text + ' div');
-    if (!textBlock) return console.error('Неправильно задан селектор элемента');
+    if (!textBlock) {
+        return console.error('Неправильно задан селектор элемента');
+    }
     const trigger = params.trigger ? document.querySelector(params.trigger) : textBlock;
-    if (!trigger) return console.error('Неправильно задан селектор триггера');
+    if (!trigger) {
+        return console.error('Неправильно задан селектор триггера');
+    }
     const isTriggerMoving = params.isTriggerMoving || false;
     const isTriggerFlipping = params.isTriggerFlipping || false;
     const numLinesArr = params.numLines;
@@ -3186,6 +3190,7 @@ function textWrap_init(params) {
     const animTime = params.animTime || 0.5;
     const animFunction = params.animFunction || 'ease-in-out';
     const minWidth = params.minWidth || 0;
+    const shouldResizeBlock = params.shouldResizeBlock || false;
 
     const canTriggerMove = isTriggerMoving && trigger !== textBlock;
 
@@ -3208,8 +3213,11 @@ function textWrap_init(params) {
     const triggerShift = $(textBlock).height() - shift;
     let isClipped = true;
     let clipTimeout;
+    const artboard = textBlock.closest('.t396__artboard');
+    let artboardHeight = artboard ? getElemParam(artboard, 'artboard-height') : 0;
+    let resizeTimeout;
 
-    if ($(window).width() > minWidth) {
+    if (document.documentElement.offsetWidth > minWidth) {
         if (totalLines <= numLines) {
             if (trigger !== textBlock) {
                 trigger.style.display = 'none';
@@ -3233,6 +3241,16 @@ function textWrap_init(params) {
         if (isTriggerFlipping) {
             $(trigger).children().css('transform', 'rotate(180deg)');
         }
+        if (shouldResizeBlock) {
+            artboard.style.height = `${artboardHeight - triggerShift}px`;
+            setTimeout(() => artboard.style.transition = `height ${animTime}s ${animFunction}`);
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    artboardHeight = getElemParam(artboard, 'artboard-height');
+                }, 250);
+            });
+        }
     
         trigger.addEventListener('click', toggleTextClip);
     }
@@ -3252,6 +3270,9 @@ function textWrap_init(params) {
             if (isTriggerFlipping) {
                 $(trigger).children().css('transform', 'rotate(0)');
             }
+            if (shouldResizeBlock) {
+                artboard.style.height = `${artboardHeight}px`;
+            }
         } else {
             $(textBlock).css('clip-path', `polygon(0 0, 100% 0, 100% ${shift}px, 0 ${shift}px`);
             clipTimeout = setTimeout(() => {
@@ -3262,6 +3283,9 @@ function textWrap_init(params) {
             }
             if (isTriggerFlipping) {
                 $(trigger).children().css('transform', 'rotate(180deg)');
+            }
+            if (shouldResizeBlock) {
+                artboard.style.height = `${artboardHeight - triggerShift}px`;
             }
         }
         isClipped = !isClipped;
