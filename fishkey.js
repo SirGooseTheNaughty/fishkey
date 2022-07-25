@@ -3768,12 +3768,8 @@ function backAudio_init(params) {
             return console.error('Триггер не задан, а автовоспроизведение не включено - аудио не может быть включено!');
         }
     }
-    if (hasTriggers && !isOneTrigger) {
-        if (autoplay) {
-            togglerOn.classList.add('hidden');
-        } else {
-            togglerOff.classList.add('hidden');
-        }
+    if (!isOneTrigger) {
+        togglerOff.classList.add('hidden');
     }
 
     const audioTag = `<audio class="fish-audio"><source src="${playLink}" type="audio/mpeg"></audio>`;
@@ -3782,14 +3778,16 @@ function backAudio_init(params) {
     audio.volume = volume || 1;
     audio.loop = loop || false;
     if (autoplay) {
-        paused = false;
-        audio.play().catch(() => {
-            if (waitForInteraction) {
-                document.addEventListener('click', getPermittedAutoplay);
-            }
-            toggleAudio();
-            paused = true;
-        });
+        audio.play()
+            .then(() => paused = false)
+            .catch(() => {
+                if (waitForInteraction) {
+                    document.addEventListener('click', getPermittedAutoplay);
+                    document.addEventListener('touchstart', getPermittedAutoplay);
+                }
+                softenVolume();
+                paused = true;
+            });
     }
 
     function toggleAudio() {
@@ -3804,6 +3802,7 @@ function backAudio_init(params) {
             toggleAudio();
         }
         document.removeEventListener('click', getPermittedAutoplay);
+        document.removeEventListener('touchstart', getPermittedAutoplay);
     }
     function toggleTriggers() {
         if (paused) {
