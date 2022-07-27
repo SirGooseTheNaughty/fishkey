@@ -3740,7 +3740,7 @@ function flippingText_init(params) {
 function backAudio_init(params) {
     const { link, volume, autoplay, loop, switchOption, waitForInteraction = true } = params;
     let playLink = 'https://docs.google.com/uc?export=download&id=';
-    let togglerOn, togglerOff, hasTriggers = false, isOneTrigger = true, paused = true, softenTimeout;
+    let togglerOn, togglerOff, isOneTrigger = true, paused = true, softenTimeout;
 
     try {
         const audioId = link.split('d/')[1].split('/')[0];
@@ -3752,7 +3752,6 @@ function backAudio_init(params) {
     try {
         togglerOn = document.querySelector('.audio-on');
         togglerOn.addEventListener('click', toggleAudio);
-        hasTriggers = true;
     } catch(e) {}
     try {
         togglerOff = document.querySelector('.audio-off');
@@ -3760,7 +3759,6 @@ function backAudio_init(params) {
         isOneTrigger = false;
         if (!togglerOn) {
             togglerOn = togglerOff;
-            hasTriggers = true;
             isOneTrigger = true;
         }
     } catch(e) {
@@ -3778,8 +3776,7 @@ function backAudio_init(params) {
     audio.volume = volume || 1;
     audio.loop = loop || false;
     if (autoplay) {
-        audio.play()
-            .then(() => paused = false)
+        playAudio()
             .catch(() => {
                 if (waitForInteraction) {
                     document.addEventListener('click', getPermittedAutoplay);
@@ -3787,6 +3784,17 @@ function backAudio_init(params) {
                 }
                 softenVolume();
                 paused = true;
+            });
+    }
+
+    function playAudio() {
+        return audio.play()
+            .then(() => {
+                paused = false;
+                softenVolume();
+                if (!isOneTrigger) {
+                    toggleTriggers();
+                }
             });
     }
 
@@ -3799,10 +3807,12 @@ function backAudio_init(params) {
     }
     function getPermittedAutoplay(e) {
         if (!togglerOn || e.target !== togglerOn.firstElementChild) {
-            toggleAudio();
+            playAudio()
+                .then(() => {
+                    document.removeEventListener('click', getPermittedAutoplay);
+                    document.removeEventListener('touchstart', getPermittedAutoplay);
+                });
         }
-        document.removeEventListener('click', getPermittedAutoplay);
-        document.removeEventListener('touchstart', getPermittedAutoplay);
     }
     function toggleTriggers() {
         if (paused) {
@@ -3817,6 +3827,7 @@ function backAudio_init(params) {
         return Math.abs(a - b) < 0.001;
     }
     function softenVolume() {
+        clearTimeout(softenTimeout);
         audio.volume += paused ? -0.01 : 0.01;
         if (audio.volume >= volume) {
             audio.volume = volume;
