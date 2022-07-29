@@ -3827,7 +3827,7 @@ function backAudio_init(params) {
         clearTimeout(softenTimeout);
         let toBePaused = false;
         let stopLoop = false;
-        const newVolume = audio.volume += paused ? -0.01 : 0.01;
+        const newVolume = paused ? audio.volume - 0.01 : audio.volume + 0.01;
         if (newVolume >= volume) {
             audio.volume = volume;
             stopLoop = true;
