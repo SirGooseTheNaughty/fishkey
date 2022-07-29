@@ -3823,16 +3823,20 @@ function backAudio_init(params) {
             togglerOff.classList.remove('hidden');
         }
     }
-    function isEqual(a, b) {
-        return Math.abs(a - b) < 0.001;
-    }
     function softenVolume() {
         clearTimeout(softenTimeout);
-        audio.volume += paused ? -0.01 : 0.01;
-        if (audio.volume >= volume) {
+        let toBePaused = false;
+        let stopLoop = false;
+        const newVolume = audio.volume += paused ? -0.01 : 0.01;
+        if (newVolume >= volume) {
             audio.volume = volume;
-        } else if (audio.volume <= 0) {
+            stopLoop = true;
+        } else if (newVolume <= 0) {
             audio.volume = 0;
+            toBePaused = true;
+            stopLoop = true;
+        } else {
+            audio.volume = newVolume;
         }
         if (switchOption === 'volume') {
             if (!paused && audio.paused) {
@@ -3841,11 +3845,11 @@ function backAudio_init(params) {
         } else {
             if (!paused) {
                 audio.play();
-            } else if (isEqual(audio.volume, 0)) {
+            } else if (toBePaused) {
                 audio.pause();
             }
         }
-        if (isEqual(audio.volume, volume) || isEqual(audio.volume, 0)) {
+        if (stopLoop) {
             return;
         }
 
