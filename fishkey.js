@@ -3115,6 +3115,7 @@ function preloader_init(params) {
 
     const block = document.querySelector(blockId);
     if (!block) return console.error("Неправильно указан id блока");
+    const closeButton = block.querySelector(params.closeButton);
 
     $(block).css({
         position: 'fixed',
@@ -3128,7 +3129,14 @@ function preloader_init(params) {
     });
     $('body').css('overflow', 'hidden');
 
-    if (isWaiting) {
+    if (closeButton) {
+        closeButton.style.opacity = '0';
+        setTimeout(() => closeButton.style.transition = 'opacity 0.4s ease', 0);
+        window.onload = () => {
+            closeButton.style.opacity = '1';
+            closeButton.addEventListener('click', closePreloader);
+        }
+    } else if (isWaiting) {
         window.onload = closePreloader;
     } else {
         setTimeout(() => {
