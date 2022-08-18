@@ -2527,13 +2527,12 @@ function horDrag_init(params) {
 
     if ($(window).width() > minWidth) {
         if (hasDelay) {
-            initCoordTracking(horDragObj, 'mousemove', 'rel', true, false, {delaySpeed, framerate: 15});
+            initCoordTracking(horDragObj, isMobile() ? 'touchmove' : 'mousemove', 'rel', true, false, {delaySpeed, framerate: 15});
         }
-        horDragObj.style.overflow = 'visible';
         document.body.style.overflowX = 'hidden';
         const allRecords = document.querySelector('#allrecords');
         if (allRecords) {
-            allRecords.style.overflowX = 'hidden';
+            allRecords.classList.add('no-overflow-x');
         }
 
         const elements = horDragObj.querySelectorAll('.tn-elem'),
@@ -2545,9 +2544,15 @@ function horDrag_init(params) {
             lefts[i] = +el.getBoundingClientRect().x;
             widths[i] = +getElemDim(el, 'width');
             rights[i] = lefts[i] + widths[i];
-            if (el.getAttribute('data-elem-type') !== 'button' && !el.querySelector('a') && !el.classList.contains('t-zoomable')) {
+            if (
+                el.getAttribute('data-elem-type') !== 'button'
+                && !el.querySelector('a')
+                && !el.classList.contains('t-zoomable')
+                && !el.classList.contains('with-pointer-events')
+            ) {
                 el.style.pointerEvents = 'none';
             }
+            el.style.userSelect = 'none';
         });
 
         const offsetLeft = Math.min.apply(Math, lefts),
@@ -2555,7 +2560,7 @@ function horDrag_init(params) {
             rightCorner = offsetLeft + maxRight;
 
         $(horDragObj).css({
-            overflow: 'visible',
+            overflowX: 'visible',
             position: 'relative',
             top: '0',
             left: '0',
@@ -2565,27 +2570,33 @@ function horDrag_init(params) {
 
         horDragMaxLeft = $(window).width() - $(horDragObj).width();
 
-        if (hasDelay) {
-            horDragObj.addEventListener('mousedown', function(event) {
-                dragStartX = event.clientX;
-                document.addEventListener('mousemove', horDragDelay);
-            });
-            document.addEventListener('mouseup', function() {
-                document.removeEventListener('mousemove', horDragDelay);
+        const handler = hasDelay ? horDragDelay : horDrag;
+        if (isMobile()) {
+            const moveHandler = (e) => handler(e.touches[0]);
+            const onTouchStart = (event) => {
+                dragStartX = event.touches[0].clientX;
+                document.addEventListener('touchmove', moveHandler);
+            };
+            const onTouchEnd = () => {
+                document.removeEventListener('touchmove', moveHandler);
                 dragObjStartX = +horDragObj.getAttribute('data-target-x');
-            });
+            }
+            horDragObj.addEventListener('touchstart', onTouchStart);
+            document.addEventListener('touchend', onTouchEnd);
         } else {
-            horDragObj.addEventListener('mousedown', function(event) {
+            const onMouseDown = (event) => {
                 dragStartX = event.clientX;
-                document.addEventListener('mousemove', horDrag);
-            });
-            document.addEventListener('mouseup', function(event) {
-                document.removeEventListener('mousemove', horDrag);
-                dragObjStartX = +horDragObj.getAttribute('data-current-x');
-            });
+                document.addEventListener('mousemove', handler);
+            };
+            const onMouseUp = () => {
+                document.removeEventListener('mousemove', handler);
+                dragObjStartX = +horDragObj.getAttribute('data-target-x');
+            };
+            horDragObj.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
+            horDragObj.addEventListener('mousedown', () => horDragObj.style.cursor = 'grabbing');
+            document.addEventListener('mouseup', () => horDragObj.style.cursor = 'grab');
         }
-        horDragObj.addEventListener('mousedown', () => horDragObj.style.cursor = 'grabbing');
-        document.addEventListener('mouseup', () => horDragObj.style.cursor = 'grab');
     }
 
     function horDrag(event) {
