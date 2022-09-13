@@ -853,6 +853,7 @@ function horScrollBlock_init(parameters) {
         headerHeight = 0,
         horScrollContainer = {};
     let resizeTimeout = null;
+    let scaleFactor = 1;
     
     if ($(window).width() > minWidth) {
         init();
@@ -871,6 +872,7 @@ function horScrollBlock_init(parameters) {
             }
         }, 250);
     });
+    setTimeout(checkScaleFactor, 250);
 
     function setCurrentShift() {
         if (typeof totalShift !== 'number') {
@@ -885,6 +887,24 @@ function horScrollBlock_init(parameters) {
         } else {
             currentShift = totalShift;
         }
+    }
+
+    function setHeaderTop() {
+        if (header) {
+            headerTop = $(header).offset().top;
+        } else {
+            headerTop = $(horScrollContainer).offset().top;
+        }
+    }
+
+    function checkScaleFactor() {
+        if (window.tn_scale_factor && window.tn_scale_factor !== scaleFactor) {
+            if (window.scrollY < headerTop) {
+                setHeaderTop();
+                scaleFactor = window.tn_scale_factor;
+            }
+        }
+        setTimeout(checkScaleFactor, 250);
     }
 
     function init() {
@@ -2559,14 +2579,7 @@ function horDrag_init(params) {
             maxRight = Math.max.apply(Math, rights),
             rightCorner = offsetLeft + maxRight;
 
-        $(horDragObj).css({
-            overflowX: 'visible',
-            position: 'relative',
-            top: '0',
-            left: '0',
-            width: rightCorner + 'px',
-            cursor: 'grab'
-        });
+        horDragObj.style = `overflowX: visible; position: relative; top: 0; left: 0; width: ${rightCorner}px !important; cursor: grab; max-width: none;`;
 
         horDragMaxLeft = $(window).width() - $(horDragObj).width();
 
