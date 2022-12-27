@@ -24,7 +24,7 @@ function getBrowserName() {
 }
 
 /* утилита для определения мобильных устройств */
-function isMobile() {
+function checkIsMobile() {
     return /Mobi/i.test(window.navigator.userAgent);
 }
 
@@ -1732,8 +1732,8 @@ function uniBurger_init(params) {
     const burgerWrapper = document.querySelector('.burgerWrapper');
 
     function burgerReshape() {
-        const ww = isMobile() ? window.screen.width : $(window).width() + 17,
-            wh = isMobile() ? window.screen.height : $(window).height(),
+        const ww = checkIsMobile() ? window.screen.width : $(window).width() + 17,
+            wh = checkIsMobile() ? window.screen.height : $(window).height(),
             maxDim = Math.max(ww, wh);
 
         switch (burgerShape) {
@@ -2547,7 +2547,7 @@ function horDrag_init(params) {
 
     if ($(window).width() > minWidth) {
         if (hasDelay) {
-            initCoordTracking(horDragObj, isMobile() ? 'touchmove' : 'mousemove', 'rel', true, false, {delaySpeed, framerate: 15});
+            initCoordTracking(horDragObj, checkIsMobile() ? 'touchmove' : 'mousemove', 'rel', true, false, {delaySpeed, framerate: 15});
         }
         document.body.style.overflowX = 'hidden';
         const allRecords = document.querySelector('#allrecords');
@@ -2584,7 +2584,7 @@ function horDrag_init(params) {
         horDragMaxLeft = $(window).width() - $(horDragObj).width();
 
         const handler = hasDelay ? horDragDelay : horDrag;
-        if (isMobile()) {
+        if (checkIsMobile()) {
             const moveHandler = (e) => handler(e.touches[0]);
             const onTouchStart = (event) => {
                 dragStartX = event.touches[0].clientX;
@@ -3693,7 +3693,7 @@ function cursorHalo_init(params) {
 // курсор на canvas
 function simpleCursor_init(params) {
 
-    if (!isMobile()) {
+    if (!checkIsMobile()) {
         $('body').append('<canvas class="easy-cursor" width="150" height="150"></canvas>');
         $('body').css('background-color', 'white');
     
@@ -4296,11 +4296,11 @@ function hidingHeader_init(params) {
     if (params.showOnMouseUp) {
         document.body.addEventListener('mouseleave', showOnMouseUp);
     }
-    if (!isMobile()) {
+    if (!checkIsMobile()) {
         header.addEventListener('mouseenter', () => clearTimeout(timeout));
         header.addEventListener('mouseleave', () => timeout = setTimeout(hideHeader, delay));
     }
-    if (!(params.disableHidingOnMobile && isMobile())) {
+    if (!(params.disableHidingOnMobile && checkIsMobile())) {
         window.addEventListener('scroll', handleScroll);
     }
 
