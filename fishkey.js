@@ -1700,7 +1700,7 @@ function uniBurger_init(params) {
             params.horizontalPosition || 'left'
         ],
         burgerShape = params.burgerShape || 'circle',
-        shownStyle = {'z-index': '999'},
+        shownStyle = {'z-index': '99'},
         hiddenStyle = {
             'width': '0',
             'height': '0',
